@@ -55,6 +55,15 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Co
 }
 
 /* ── Waitlist ── */
+.colony-btn{
+  display:inline-block;margin-top:28px;
+  background:transparent;border:1px solid var(--cyan);color:var(--cyan);
+  padding:12px 28px;font-family:inherit;font-size:14px;font-weight:bold;
+  letter-spacing:.08em;border-radius:4px;text-decoration:none;
+  transition:background .15s,color .15s
+}
+.colony-btn:hover{background:var(--cyan);color:#0a0b0e}
+
 .waitlist-wrap{margin-top:40px;width:100%;max-width:400px;text-align:center}
 .waitlist-heading{
   font-size:13px;color:var(--yellow);letter-spacing:.12em;
@@ -119,6 +128,9 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Co
     <div class="hero-headline">Cultivate Your Autonomous AI Colony.</div>
     <div class="hero-sub">Your Vision. Intelligent Execution. Directed by You.</div>
   </div>
+
+  <!-- Colony Login -->
+  <a class="colony-btn" href="https://colony.aint.farm">Enter Colony →</a>
 
   <!-- Waitlist -->
   <div class="waitlist-wrap">
