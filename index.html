@@ -3,74 +3,96 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AInt.farm — A Colony of AI Agents, Directed by You</title>
+<title>AInt.farm — Cultivate Your Autonomous AI Colony</title>
 <meta name="description" content="Run your own colony of AI agents. Direct them from anywhere. Watch them work in real time.">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#0a0b0e;--surface:#0f1117;--border:#1e2028;
   --text:#7a8090;--bright:#f0f2f5;--dim:#3d4251;
-  --green:#4ade80;--cyan:#22d3ee;--yellow:#fbbf24;
+  --green:#4ade80;--cyan:#22d3ee;--yellow:#fbbf24;--purple:#a78bfa;
 }
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Consolas','Monaco','Courier New',monospace;overflow:hidden}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Consolas','Monaco','Courier New',monospace;overflow-x:hidden}
 
 /* ── Ants ── */
-.ant{position:fixed;font-size:14px;user-select:none;pointer-events:none;z-index:1;opacity:.7}
+.ant{position:fixed;font-size:13px;user-select:none;pointer-events:none;z-index:1;opacity:.6}
 @keyframes walk-right{from{transform:translateX(-20px) scaleX(1)} to{transform:translateX(calc(100vw + 20px)) scaleX(1)}}
 @keyframes walk-left {from{transform:translateX(calc(100vw + 20px)) scaleX(-1)} to{transform:translateX(-20px) scaleX(-1)}}
 @keyframes walk-down {from{transform:translateY(-20px)} to{transform:translateY(calc(100vh + 20px))}}
 
-/* ── Layout ── */
-.scene{
-  height:100vh;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  position:relative;z-index:10;padding:24px;text-align:center
+/* ── Grid ── */
+.grid{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(34,211,238,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,.025) 1px, transparent 1px);
+  background-size:48px 48px
 }
 
+/* ── Layout ── */
+.page{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;padding:64px 24px 80px}
+
+/* ── Hero ── */
+.hero{text-align:center;max-width:600px}
 .logo{
-  font-size:clamp(48px, 10vw, 96px);font-weight:bold;
-  color:var(--bright);letter-spacing:.06em;line-height:1;
-  position:relative;display:inline-block
+  font-size:clamp(52px, 12vw, 108px);font-weight:bold;
+  color:var(--bright);letter-spacing:.06em;line-height:1
 }
 .logo span{color:var(--cyan)}
-.logo-sub{
-  font-size:clamp(11px,2vw,14px);color:var(--dim);
-  letter-spacing:.22em;text-transform:uppercase;margin-top:10px
+.logo-eyebrow{
+  font-size:11px;color:var(--dim);letter-spacing:.28em;
+  text-transform:uppercase;margin-bottom:12px
 }
-
-.tagline{
-  font-size:clamp(14px,3vw,20px);color:var(--text);
-  margin-top:32px;max-width:480px;line-height:1.6;
+.hero-headline{
+  font-size:clamp(15px,3vw,22px);color:var(--bright);
+  margin-top:24px;line-height:1.4;
+  font-family:system-ui,-apple-system,sans-serif;font-weight:600
+}
+.hero-sub{
+  font-size:clamp(13px,2.5vw,16px);color:var(--text);
+  margin-top:10px;line-height:1.7;
   font-family:system-ui,-apple-system,sans-serif;font-weight:300
 }
-.tagline strong{color:var(--bright);font-weight:600}
 
-.waitlist{margin-top:40px;display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:380px}
-.waitlist-form{display:flex;gap:8px;width:100%}
+/* ── Waitlist ── */
+.waitlist-wrap{margin-top:40px;width:100%;max-width:400px;text-align:center}
+.waitlist-heading{
+  font-size:13px;color:var(--yellow);letter-spacing:.12em;
+  text-transform:uppercase;margin-bottom:14px;font-weight:bold
+}
+.waitlist-form{display:flex;gap:8px}
 .waitlist-form input{
   flex:1;background:var(--surface);border:1px solid var(--border);
-  color:var(--bright);padding:12px 16px;font-family:inherit;font-size:14px;
+  color:var(--bright);padding:13px 16px;font-family:inherit;font-size:14px;
   border-radius:4px;outline:none;min-width:0
 }
 .waitlist-form input::placeholder{color:var(--dim)}
 .waitlist-form input:focus{border-color:var(--cyan)}
 .waitlist-form button{
-  background:var(--cyan);color:#0a0b0e;border:none;
-  padding:12px 20px;font-family:inherit;font-size:14px;font-weight:bold;
+  background:var(--yellow);color:#0a0b0e;border:none;
+  padding:13px 18px;font-family:inherit;font-size:13px;font-weight:bold;
   cursor:pointer;border-radius:4px;white-space:nowrap
 }
-.waitlist-form button:hover{background:#67e8f9}
-.waitlist-note{font-size:11px;color:var(--dim);letter-spacing:.04em}
-.waitlist-msg{font-size:12px;color:var(--green);min-height:16px}
+.waitlist-form button:hover{background:#fcd34d}
+.waitlist-note{font-size:11px;color:var(--dim);margin-top:10px;letter-spacing:.04em}
+.waitlist-msg{font-size:12px;color:var(--green);margin-top:6px;min-height:16px}
 
-.stack{
-  margin-top:56px;display:flex;flex-wrap:wrap;justify-content:center;gap:8px
+/* ── Features ── */
+.features{
+  margin-top:72px;width:100%;max-width:720px;
+  display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px
 }
-.tag{
-  font-size:10px;color:var(--dim);padding:4px 10px;
-  border:1px solid var(--border);border-radius:2px;letter-spacing:.08em;text-transform:uppercase
+.feat{
+  background:var(--surface);border:1px solid var(--border);
+  padding:20px;border-radius:6px;transition:border-color .2s
 }
+.feat:hover{border-color:var(--dim)}
+.feat-icon{font-size:22px;margin-bottom:10px}
+.feat-name{font-size:11px;color:var(--cyan);letter-spacing:.12em;text-transform:uppercase;font-weight:bold;margin-bottom:6px}
+.feat-pitch{font-size:13px;color:var(--bright);font-family:system-ui,-apple-system,sans-serif;font-weight:600;margin-bottom:4px}
+.feat-desc{font-size:12px;color:var(--text);font-family:system-ui,-apple-system,sans-serif;line-height:1.5}
 
+/* ── Footer ── */
 .footer{
   position:fixed;bottom:16px;width:100%;text-align:center;
   font-size:10px;color:var(--dim);letter-spacing:.06em;z-index:10
@@ -78,13 +100,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Consol
 .footer a{color:var(--dim);text-decoration:none}
 .footer a:hover{color:var(--text)}
 
-/* ── Grid lines ── */
-.grid{
-  position:fixed;inset:0;z-index:0;
-  background-image:
-    linear-gradient(rgba(34,211,238,.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(34,211,238,.03) 1px, transparent 1px);
-  background-size:48px 48px
+@media(max-width:480px){
+  .page{padding:48px 16px 72px}
+  .waitlist-form{flex-direction:column}
 }
 </style>
 </head>
@@ -92,34 +110,67 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Consol
 
 <div class="grid"></div>
 
-<div class="scene">
-  <div>
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="logo-eyebrow">colony.aint.farm · coming soon</div>
     <div class="logo">AINT<span>.</span>FARM</div>
-    <div class="logo-sub">colony.aint.farm · coming soon</div>
+    <div class="hero-headline">Cultivate Your Autonomous AI Colony.</div>
+    <div class="hero-sub">Your Vision. Intelligent Execution. Directed by You.</div>
   </div>
 
-  <p class="tagline">
-    Run your own colony of <strong>AI agents</strong>.<br>
-    Direct them from anywhere. Watch them work in real time.
-  </p>
-
-  <div class="waitlist">
+  <!-- Waitlist -->
+  <div class="waitlist-wrap">
+    <div class="waitlist-heading">🎟 Join the Founding Mayors</div>
     <div class="waitlist-form">
       <input type="email" id="email" placeholder="your@email.com" autocomplete="email">
-      <button onclick="join()">Join Waitlist</button>
+      <button onclick="join()">Claim My Golden Ticket</button>
     </div>
-    <div class="waitlist-note">First 500 get a golden ticket. No spam.</div>
+    <div class="waitlist-note">Limited to 500 Founding Colonies. No spam, ever.</div>
     <div class="waitlist-msg" id="wl-msg"></div>
   </div>
 
-  <div class="stack">
-    <span class="tag">Local First</span>
-    <span class="tag">Gemini + Claude</span>
-    <span class="tag">Real Time Feed</span>
-    <span class="tag">Lightning Rod</span>
-    <span class="tag">Mayor Directed</span>
-    <span class="tag">Open Colony</span>
+  <!-- Features -->
+  <div class="features">
+    <div class="feat">
+      <div class="feat-icon">🛡</div>
+      <div class="feat-name">Local First</div>
+      <div class="feat-pitch">Unrivaled Privacy & Speed.</div>
+      <div class="feat-desc">Your AI operates on your infrastructure, always under your control.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🧠</div>
+      <div class="feat-name">Gemini + Claude</div>
+      <div class="feat-pitch">Powered by the Best Minds.</div>
+      <div class="feat-desc">Seamlessly integrate leading LLMs for unparalleled intelligence.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">👁</div>
+      <div class="feat-name">Real Time Feed</div>
+      <div class="feat-pitch">Glass Box Visibility.</div>
+      <div class="feat-desc">Monitor your colony's every action, thought, and output — live.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-name">Lightning Rod</div>
+      <div class="feat-pitch">Instant Command.</div>
+      <div class="feat-desc">Direct your colony from anywhere with immediate, observable effect.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">👑</div>
+      <div class="feat-name">Mayor Directed</div>
+      <div class="feat-pitch">Total Control.</div>
+      <div class="feat-desc">You set the vision. Your agents execute the blueprint.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🔗</div>
+      <div class="feat-name">Open Colony</div>
+      <div class="feat-pitch">Extendable & Transparent.</div>
+      <div class="feat-desc">Build on an open framework designed for limitless possibility.</div>
+    </div>
   </div>
+
 </div>
 
 <div class="footer">
@@ -130,17 +181,14 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Consol
 
 <script>
 // ── Ants ──────────────────────────────────────────────────────────────────────
-const ANT = '🐜';
-const ants = [];
-
 function spawnAnt() {
-  const el  = document.createElement('div');
+  const el = document.createElement('div');
   el.className = 'ant';
-  el.textContent = ANT;
+  el.textContent = '🐜';
 
   const dir = Math.random() < 0.6 ? (Math.random() < 0.5 ? 'right' : 'left') : 'down';
-  const dur = 8 + Math.random() * 14;
-  const del = Math.random() * 6;
+  const dur = 10 + Math.random() * 16;
+  const del = Math.random() * 8;
 
   if (dir === 'right') {
     el.style.top  = (5 + Math.random() * 90) + 'vh';
@@ -155,11 +203,9 @@ function spawnAnt() {
     el.style.top  = '0';
     el.style.animation = `walk-down ${dur}s ${del}s linear infinite`;
   }
-
   document.body.appendChild(el);
 }
-
-for (let i = 0; i < 18; i++) spawnAnt();
+for (let i = 0; i < 20; i++) spawnAnt();
 
 // ── Waitlist ──────────────────────────────────────────────────────────────────
 async function join() {
@@ -170,13 +216,11 @@ async function join() {
     msg.textContent = 'Enter a valid email.';
     return;
   }
-  // TODO: wire to Supabase invites or a form backend
+  // TODO: wire to Supabase invites table
   msg.style.color = 'var(--green)';
-  msg.textContent = '✓ You\'re on the list. Golden ticket incoming.';
+  msg.textContent = '✓ You\'re in. Golden ticket incoming, Founding Mayor.';
   document.getElementById('email').value = '';
 }
-
-// Enter key submits
 document.getElementById('email').addEventListener('keydown', e => { if (e.key === 'Enter') join(); });
 </script>
 </body>
