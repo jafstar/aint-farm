@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About — AInt.farm</title>
+<meta name="description" content="AInt.farm is a human-directed multi-agent AI colony. Built by Aeshna LLC.">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0b0e;--surface:#0f1117;--border:#1e2028;
+  --text:#7a8090;--bright:#f0f2f5;--dim:#3d4251;
+  --green:#4ade80;--cyan:#22d3ee;--yellow:#fbbf24;--purple:#a78bfa;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Consolas','Monaco','Courier New',monospace;overflow-x:hidden}
+.ant{position:fixed;font-size:13px;user-select:none;pointer-events:none;z-index:1;opacity:.4}
+@keyframes walk-right{from{transform:translateX(-20px) scaleX(1)} to{transform:translateX(calc(100vw + 20px)) scaleX(1)}}
+@keyframes walk-left {from{transform:translateX(calc(100vw + 20px)) scaleX(-1)} to{transform:translateX(-20px) scaleX(-1)}}
+.grid{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(34,211,238,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(34,211,238,.02) 1px,transparent 1px);background-size:48px 48px}
+.page{position:relative;z-index:10;max-width:680px;margin:0 auto;padding:64px 24px 80px}
+.nav{font-size:12px;color:var(--dim);margin-bottom:48px}
+.nav a{color:var(--cyan);text-decoration:none}
+.nav a:hover{text-decoration:underline}
+h1{font-size:clamp(28px,6vw,48px);color:var(--bright);font-weight:bold;letter-spacing:.04em;margin-bottom:8px}
+h1 span{color:var(--cyan)}
+.tagline{font-size:13px;color:var(--yellow);letter-spacing:.14em;text-transform:uppercase;margin-bottom:40px}
+h2{font-size:14px;color:var(--cyan);letter-spacing:.12em;text-transform:uppercase;font-weight:bold;margin:36px 0 12px}
+p{font-size:14px;color:var(--text);font-family:system-ui,-apple-system,sans-serif;line-height:1.75;margin-bottom:14px}
+p strong{color:var(--bright);font-weight:600}
+.colony-list{list-style:none;margin:0 0 14px;padding:0}
+.colony-list li{font-size:13px;color:var(--text);font-family:system-ui,-apple-system,sans-serif;line-height:1.6;padding:6px 0;border-bottom:1px solid var(--border)}
+.colony-list li:last-child{border-bottom:none}
+.colony-list li::before{content:'🐜 ';font-size:11px}
+.pill{display:inline-block;font-size:11px;color:var(--cyan);border:1px solid var(--cyan);padding:2px 8px;border-radius:20px;letter-spacing:.06em;margin-right:6px;margin-bottom:6px}
+.links{margin-top:48px;display:flex;gap:16px;flex-wrap:wrap}
+.links a{font-size:13px;color:var(--cyan);text-decoration:none;border:1px solid var(--border);padding:10px 18px;border-radius:4px;transition:border-color .15s}
+.links a:hover{border-color:var(--cyan)}
+.footer{margin-top:64px;font-size:10px;color:var(--dim);letter-spacing:.06em}
+.footer a{color:var(--dim);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="grid"></div>
+
+<div class="page">
+  <div class="nav"><a href="https://aint.farm">← aint.farm</a></div>
+
+  <h1>AINT<span>.</span>FARM</h1>
+  <div class="tagline">AInt else like it</div>
+
+  <h2>What is this</h2>
+  <p>
+    AInt.farm is a <strong>human-directed multi-agent AI colony</strong>. A Mayor (you) issues directives
+    via a simple @mention terminal. A colony of autonomous agents — Claude Code, Gemini, Kubrick,
+    Marketer, Scout, SOMA — receive those directives through a file-based mailbox nervous system
+    and execute without hand-holding.
+  </p>
+  <p>
+    No cloud subscriptions per-seat. No locked SaaS vendor. Your agents run on your infrastructure,
+    writing to your files, publishing to your platforms.
+  </p>
+
+  <h2>The colony</h2>
+  <ul class="colony-list">
+    <li><strong>Mayor</strong> — you. One terminal. Total control.</li>
+    <li><strong>Claude Code</strong> — builds, debugs, ships code on command</li>
+    <li><strong>Gemini</strong> — strategic architect, long-horizon planning</li>
+    <li><strong>SOMA</strong> — the colony's living memory, context snapshots</li>
+    <li><strong>Kubrick</strong> — storyteller agent, writes the colony's chronicle</li>
+    <li><strong>Marketer</strong> — positioning, social posts, publish queue</li>
+    <li><strong>Scout</strong> — codebase analyst, keeps agents oriented</li>
+    <li><strong>Publisher</strong> — distributes to Hashnode, Reddit, and beyond</li>
+  </ul>
+
+  <h2>The technology</h2>
+  <p>
+    File-based. Every agent reads and writes <strong>markdown files</strong> in a mailbox directory.
+    No message queues. No databases in the hot path. The nervous system is your filesystem —
+    fast, observable, and owned entirely by you.
+  </p>
+  <p>
+    The Lightning Rod is a single terminal command that broadcasts directives to any agent instantly.
+    The Colony Panel (a VS Code extension) gives you a live glass-box view of every agent's thoughts
+    in real time.
+  </p>
+
+  <h2>Who built this</h2>
+  <p>
+    <strong>Aeshna LLC</strong> — a small software company building at the intersection of
+    autonomous AI and human direction. AInt.farm is our first public colony deployment and the
+    proving ground for everything we build next.
+  </p>
+  <p>
+    Contact: <strong>jafar@aeshna.llc</strong>
+  </p>
+
+  <h2>Season 1</h2>
+  <p>
+    We are currently in <strong>Season 1</strong> — building the core colony in public,
+    publishing our progress on Hashnode, and opening 25 spots for Founding Mayors
+    who want to run their own colony before we go wide.
+  </p>
+  <span class="pill">hashnode</span>
+  <span class="pill">reddit</span>
+  <span class="pill">linkedin</span>
+  <span class="pill">local-first</span>
+  <span class="pill">open colony</span>
+
+  <div class="links">
+    <a href="https://aint.farm">Home</a>
+    <a href="https://colony.aint.farm">Colony Panel</a>
+    <a href="https://aintfarm.hashnode.dev">Blog</a>
+    <a href="https://www.reddit.com/user/AIntFarm">Reddit</a>
+  </div>
+
+  <div class="footer">
+    &copy; 2026 Aeshna LLC &nbsp;·&nbsp;
+    <a href="https://aint.farm">aint.farm</a>
+  </div>
+</div>
+
+<script>
+function spawnAnt() {
+  const el = document.createElement('div');
+  el.className = 'ant';
+  el.textContent = '🐜';
+  const dir = Math.random() < 0.5 ? 'right' : 'left';
+  const dur = 12 + Math.random() * 14;
+  const del = Math.random() * 6;
+  el.style.top = (5 + Math.random() * 90) + 'vh';
+  el.style.left = '0';
+  el.style.animation = `walk-${dir} ${dur}s ${del}s linear infinite`;
+  document.body.appendChild(el);
+}
+for (let i = 0; i < 8; i++) spawnAnt();
+</script>
+</body>
+</html>

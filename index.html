@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AInt.farm — Cultivate Your Autonomous AI Colony</title>
 <meta name="description" content="Run your own colony of AI agents. Direct them from anywhere. Watch them work in real time.">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -101,6 +102,26 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Co
 .feat-pitch{font-size:13px;color:var(--bright);font-family:system-ui,-apple-system,sans-serif;font-weight:600;margin-bottom:4px}
 .feat-desc{font-size:12px;color:var(--text);font-family:system-ui,-apple-system,sans-serif;line-height:1.5}
 
+/* ── SOMA Graph ── */
+.soma-wrap{margin-top:72px;width:100%;max-width:720px}
+.soma-heading{
+  font-size:11px;color:var(--cyan);letter-spacing:.18em;
+  text-transform:uppercase;font-weight:bold;margin-bottom:4px
+}
+.soma-sub{font-size:12px;color:var(--dim);margin-bottom:16px;font-family:system-ui,sans-serif}
+.soma-canvas-wrap{
+  background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  overflow:hidden;position:relative;
+}
+#soma-canvas{display:block;width:100%;height:340px}
+.soma-legend{
+  display:flex;gap:16px;flex-wrap:wrap;padding:12px 16px;
+  border-top:1px solid var(--border);
+}
+.soma-legend-item{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--dim);letter-spacing:.04em}
+.soma-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.soma-updated{font-size:10px;color:var(--dim);padding:0 16px 10px;letter-spacing:.04em}
+
 /* ── Footer ── */
 .footer{
   position:fixed;bottom:16px;width:100%;text-align:center;
@@ -139,7 +160,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Co
       <input type="email" id="email" placeholder="your@email.com" autocomplete="email">
       <button onclick="join()">Claim My Golden Ticket</button>
     </div>
-    <div class="waitlist-note">Limited to 500 Founding Colonies. No spam, ever.</div>
+    <div class="waitlist-note"><span id="spots-left">25</span> spots remaining · No spam, ever.</div>
     <div class="waitlist-msg" id="wl-msg"></div>
   </div>
 
@@ -183,6 +204,23 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Co
     </div>
   </div>
 
+  <!-- SOMA Graph -->
+  <div class="soma-wrap">
+    <div class="soma-heading">🧠 Live Colony Graph</div>
+    <div class="soma-sub">AInt.farm's SOMA — the colony's living memory, updated every 5 minutes.</div>
+    <div class="soma-canvas-wrap">
+      <canvas id="soma-canvas"></canvas>
+      <div class="soma-legend">
+        <div class="soma-legend-item"><div class="soma-legend-dot" style="background:#f59e0b"></div>Mayor</div>
+        <div class="soma-legend-item"><div class="soma-legend-dot" style="background:#22d3ee"></div>Agent</div>
+        <div class="soma-legend-item"><div class="soma-legend-dot" style="background:#fb923c"></div>Memory</div>
+        <div class="soma-legend-item"><div class="soma-legend-dot" style="background:#e2e8f0"></div>Channel</div>
+        <div class="soma-legend-item"><div class="soma-legend-dot" style="background:#facc15"></div>Decision</div>
+      </div>
+      <div class="soma-updated" id="soma-updated"></div>
+    </div>
+  </div>
+
 </div>
 
 <div class="footer">
@@ -192,6 +230,21 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Co
 </div>
 
 <script>
+// ── Supabase ──────────────────────────────────────────────────────────────────
+const sb = supabase.createClient(
+  'https://izqhukghnkbovzqkhouc.supabase.co',
+  'sb_publishable_Xrba2Tjb0m3hqu2AvxUmyA_katXFrKs'
+);
+
+async function loadSpotsLeft() {
+  const { data } = await sb.rpc('waitlist_spots_left');
+  const remaining = data ?? 25;
+  const el = document.getElementById('spots-left');
+  if (el) el.textContent = remaining;
+  return remaining;
+}
+loadSpotsLeft();
+
 // ── Ants ──────────────────────────────────────────────────────────────────────
 function spawnAnt() {
   const el = document.createElement('div');
@@ -208,7 +261,7 @@ function spawnAnt() {
     el.style.animation = `walk-right ${dur}s ${del}s linear infinite`;
   } else if (dir === 'left') {
     el.style.top  = (5 + Math.random() * 90) + 'vh';
-    el.style.right = '0';
+    el.style.left = '0';
     el.style.animation = `walk-left ${dur}s ${del}s linear infinite`;
   } else {
     el.style.left = (5 + Math.random() * 90) + 'vw';
@@ -228,12 +281,117 @@ async function join() {
     msg.textContent = 'Enter a valid email.';
     return;
   }
-  // TODO: wire to Supabase invites table
+
+  const remaining = await loadSpotsLeft();
+  if (remaining <= 0) {
+    msg.style.color = '#f87171';
+    msg.textContent = 'All spots claimed. Follow @aintfarm for Season 2.';
+    return;
+  }
+
+  const { error } = await sb.from('waitlist').insert({ email });
+  if (error) {
+    if (error.code === '23505') {
+      msg.style.color = 'var(--yellow)';
+      msg.textContent = 'Already on the list, Founding Mayor.';
+    } else {
+      msg.style.color = '#f87171';
+      msg.textContent = 'Something went wrong. Try again.';
+    }
+    return;
+  }
+
   msg.style.color = 'var(--green)';
   msg.textContent = '✓ You\'re in. Golden ticket incoming, Founding Mayor.';
   document.getElementById('email').value = '';
+  loadSpotsLeft();
 }
 document.getElementById('email').addEventListener('keydown', e => { if (e.key === 'Enter') join(); });
+
+// ── SOMA Graph ────────────────────────────────────────────────────────────────
+async function loadSomaGraph() {
+  const { data } = await sb.rpc('latest_soma_graph', { p_colony_id: 'aintfarm' });
+  if (!data) return;
+  renderGraph(data);
+  const updated = data.meta?.lastUpdate ? new Date(data.meta.lastUpdate).toLocaleString() : '';
+  const el = document.getElementById('soma-updated');
+  if (el && updated) el.textContent = 'Last updated: ' + updated;
+}
+
+function renderGraph(graph) {
+  const canvas = document.getElementById('soma-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth;
+  const H = canvas.offsetHeight || 340;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  ctx.scale(dpr, dpr);
+
+  const nodes = graph.nodes || [];
+  const edges = graph.edges || [];
+
+  // Position nodes in a circle + center for memory
+  const cx = W / 2, cy = H / 2;
+  const r  = Math.min(W, H) * 0.34;
+  const nonDecision = nodes.filter(n => n.type !== 'decision');
+  const decisionNodes = nodes.filter(n => n.type === 'decision');
+
+  nonDecision.forEach((n, i) => {
+    const angle = (i / nonDecision.length) * Math.PI * 2 - Math.PI / 2;
+    n.x = n.type === 'memory' ? cx : cx + r * Math.cos(angle);
+    n.y = n.type === 'memory' ? cy : cy + r * Math.sin(angle);
+  });
+  decisionNodes.forEach((n, i) => {
+    const angle = (i / Math.max(decisionNodes.length, 1)) * Math.PI * 2;
+    n.x = cx + (r * 0.55) * Math.cos(angle);
+    n.y = cy + (r * 0.55) * Math.sin(angle);
+  });
+
+  const nodeMap = {};
+  nodes.forEach(n => { nodeMap[n.id] = n; });
+
+  // Draw edges
+  ctx.lineWidth = 1;
+  for (const e of edges) {
+    const a = nodeMap[e.source], b = nodeMap[e.target];
+    if (!a || !b) continue;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = 'rgba(62,70,89,0.7)';
+    ctx.stroke();
+    // Edge label
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    ctx.font = '9px Consolas,monospace';
+    ctx.fillStyle = 'rgba(61,66,81,0.9)';
+    ctx.textAlign = 'center';
+    ctx.fillText(e.label || '', mx, my - 3);
+  }
+
+  // Draw nodes
+  for (const n of nodes) {
+    const rad = n.type === 'human' ? 16 : n.type === 'memory' ? 14 : n.type === 'decision' ? 8 : 12;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, rad, 0, Math.PI * 2);
+    ctx.fillStyle = (n.color || '#3d4251') + '33';
+    ctx.fill();
+    ctx.strokeStyle = n.color || '#3d4251';
+    ctx.lineWidth = n.type === 'human' ? 2 : 1.5;
+    ctx.stroke();
+
+    // Label
+    ctx.font = `bold ${n.type === 'decision' ? 8 : 10}px Consolas,monospace`;
+    ctx.fillStyle = n.color || '#7a8090';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const label = n.type === 'decision' ? (n.label.slice(0, 18) + '…') : n.label;
+    ctx.fillText(label, n.x, n.y + rad + 10);
+  }
+}
+
+loadSomaGraph();
 </script>
 </body>
 </html>
