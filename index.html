@@ -114,12 +114,30 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Co
   overflow:hidden;position:relative;
 }
 #soma-canvas{display:block;width:100%;height:340px}
+#soma-3d-canvas{display:block;width:100%;height:340px}
 .soma-tooltip{
   display:none;position:absolute;z-index:20;pointer-events:none;
   background:var(--bg);border:1px solid var(--cyan);color:var(--bright);
   font-size:11px;padding:5px 9px;border-radius:4px;max-width:220px;
   font-family:system-ui,-apple-system,sans-serif;
 }
+.soma-3d-detail{
+  display:none;position:absolute;top:10px;left:10px;z-index:20;max-width:210px;
+  background:rgba(10,11,14,.94);border:1px solid var(--cyan);border-radius:6px;
+  padding:10px 26px 10px 12px;font-family:system-ui,-apple-system,sans-serif;
+}
+.soma-3d-detail-type{font-size:10px;color:var(--cyan);letter-spacing:.1em;text-transform:uppercase;font-weight:bold}
+.soma-3d-detail-label{font-size:12px;color:var(--bright);margin-top:4px;line-height:1.4;word-break:break-word}
+.soma-3d-detail-meta{font-size:10px;color:var(--dim);margin-top:6px}
+.soma-3d-detail-close{position:absolute;top:6px;right:8px;cursor:pointer;color:var(--dim);font-size:12px;line-height:1}
+.soma-3d-detail-close:hover{color:var(--bright)}
+.soma-reset-btn{
+  display:none;position:absolute;bottom:10px;right:10px;z-index:20;
+  background:var(--bg);border:1px solid var(--border);color:var(--dim);
+  font-size:10px;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;
+  letter-spacing:.04em;
+}
+.soma-reset-btn:hover{border-color:var(--cyan);color:var(--cyan)}
 .soma-legend{
   display:flex;gap:16px;flex-wrap:wrap;padding:12px 16px;
   border-top:1px solid var(--border);
@@ -229,9 +247,12 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Co
   <div class="soma-wrap">
     <div class="soma-heading">🧠 Live Colony Graph</div>
     <div class="soma-sub">AInt.farm's SOMA — the colony's living memory, updated every 5 minutes.</div>
-    <div class="soma-canvas-wrap">
+    <div class="soma-canvas-wrap" id="soma-canvas-wrap">
       <canvas id="soma-canvas"></canvas>
+      <canvas id="soma-3d-canvas" style="display:none"></canvas>
       <div class="soma-tooltip" id="soma-tooltip"></div>
+      <div class="soma-3d-detail" id="soma-3d-detail"></div>
+      <button class="soma-reset-btn" id="soma-reset-btn" onclick="window.somaResetView && window.somaResetView()">⟲ Reset View</button>
       <div class="soma-legend">
         <div class="soma-legend-item"><div class="soma-legend-dot" style="background:#f59e0b"></div>Mayor</div>
         <div class="soma-legend-item"><div class="soma-legend-dot" style="background:#22d3ee"></div>Agent</div>
@@ -354,7 +375,11 @@ let renderedNodes = []; // positions from the last draw, for hover hit-testing
 async function loadSomaGraph() {
   const { data } = await sb.rpc('latest_soma_graph', { p_colony_id: 'aintfarm' });
   if (!data) return;
-  renderGraph(data);
+  if (window.SOMA_HAS_WEBGL && window.renderSoma3D) {
+    window.renderSoma3D(data);
+  } else {
+    renderGraph(data);
+  }
   const updated = data.meta?.lastUpdate ? new Date(data.meta.lastUpdate).toLocaleString() : '';
   const el = document.getElementById('soma-updated');
   if (el && updated) el.textContent = 'Last updated: ' + updated;
@@ -461,10 +486,251 @@ function renderGraph(graph) {
   renderedNodes = nodes;
 }
 
-loadSomaGraph();
-// Sub-copy claims "updated every 5 minutes" — the graph never actually
-// re-fetched after initial load until now.
-setInterval(loadSomaGraph, 5 * 60 * 1000);
+// Waits for the 3D module script below (type="module" is always deferred)
+// so window.SOMA_HAS_WEBGL/renderSoma3D are set before the first fetch —
+// DOMContentLoaded fires after all deferred/module scripts have run.
+document.addEventListener('DOMContentLoaded', () => {
+  loadSomaGraph();
+  // Sub-copy claims "updated every 5 minutes" — the graph never actually
+  // re-fetched after initial load until now.
+  setInterval(loadSomaGraph, 5 * 60 * 1000);
+});
+</script>
+
+<!-- ── SOMA 3D Graph — force-directed node graph, orbit controls, click-to-detail.
+     Falls back to the 2D canvas above on WebGL-unavailable browsers (see
+     hasWebGL() below). Scoped and approved by Gemini: same data source
+     (latest_soma_graph RPC), same 5 node types/colors, no build step. ── -->
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+
+function hasWebGL() {
+  try {
+    const c = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl')));
+  } catch (e) { return false; }
+}
+window.SOMA_HAS_WEBGL = hasWebGL();
+
+if (window.SOMA_HAS_WEBGL) {
+  const canvas2d  = document.getElementById('soma-canvas');
+  const canvas3d  = document.getElementById('soma-3d-canvas');
+  const resetBtn  = document.getElementById('soma-reset-btn');
+  const detail    = document.getElementById('soma-3d-detail');
+  const wrap      = document.getElementById('soma-canvas-wrap');
+  canvas2d.style.display = 'none';
+  canvas3d.style.display = 'block';
+  resetBtn.style.display = 'block';
+
+  let W = wrap.offsetWidth, H = 340;
+
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 2000);
+  const DEFAULT_CAM_POS = new THREE.Vector3(0, 0, 260);
+  camera.position.copy(DEFAULT_CAM_POS);
+
+  const renderer = new THREE.WebGLRenderer({ canvas: canvas3d, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(W, H);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  dirLight.position.set(100, 150, 200);
+  scene.add(dirLight);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.minDistance = 60;
+  controls.maxDistance = 600;
+
+  window.somaResetView = function () {
+    camera.position.copy(DEFAULT_CAM_POS);
+    controls.target.set(0, 0, 0);
+    controls.update();
+  };
+
+  window.addEventListener('resize', () => {
+    W = wrap.offsetWidth; H = 340;
+    camera.aspect = W / H;
+    camera.updateProjectionMatrix();
+    renderer.setSize(W, H);
+  });
+
+  let nodeMeshes = [];
+  let edgeLines  = null;
+  let simNodes   = [];
+  let simEdges   = [];
+  let settleFrames = 0;
+  const SETTLE_TOTAL = 220; // ~3-4s of active force-directed settling, then it freezes
+
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+
+  function clearScene() {
+    nodeMeshes.forEach(({ mesh }) => scene.remove(mesh));
+    nodeMeshes = [];
+    if (edgeLines) { scene.remove(edgeLines); edgeLines.geometry.dispose(); edgeLines.material.dispose(); edgeLines = null; }
+  }
+
+  function updateEdgeGeometry() {
+    if (edgeLines) { scene.remove(edgeLines); edgeLines.geometry.dispose(); edgeLines.material.dispose(); }
+    const positions = [];
+    simEdges.forEach(e => {
+      const a = simNodes[e.a], b = simNodes[e.b];
+      if (!a || !b) return;
+      positions.push(a.x, a.y, a.z, b.x, b.y, b.z);
+    });
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    const mat = new THREE.LineBasicMaterial({ color: 0x3d4251, transparent: true, opacity: 0.55 });
+    edgeLines = new THREE.LineSegments(geo, mat);
+    scene.add(edgeLines);
+  }
+
+  window.renderSoma3D = function (graph) {
+    clearScene();
+    detail.style.display = 'none';
+
+    const nodes = graph.nodes || [];
+    const edges = graph.edges || [];
+    const degree = {};
+    edges.forEach(e => {
+      degree[e.source] = (degree[e.source] || 0) + 1;
+      degree[e.target] = (degree[e.target] || 0) + 1;
+    });
+
+    // Seed on a sphere (golden-angle spiral) so the initial layout isn't a
+    // flat clump the force sim has to untangle from scratch.
+    simNodes = nodes.map((n, i) => {
+      const phi = Math.acos(1 - 2 * (i + 0.5) / nodes.length);
+      const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+      const r0 = 90;
+      return {
+        node: n,
+        x: r0 * Math.sin(phi) * Math.cos(theta),
+        y: r0 * Math.sin(phi) * Math.sin(theta),
+        z: r0 * Math.cos(phi),
+        vx: 0, vy: 0, vz: 0,
+        degree: degree[n.id] || 0,
+      };
+    });
+    const idIndex = {};
+    simNodes.forEach((sn, i) => { idIndex[sn.node.id] = i; });
+    simEdges = edges.map(e => ({ a: idIndex[e.source], b: idIndex[e.target] }))
+                    .filter(e => e.a !== undefined && e.b !== undefined);
+
+    simNodes.forEach(sn => {
+      const baseR = (sn.node.type === 'human' || sn.node.type === 'mayor') ? 10
+                  : sn.node.type === 'memory' ? 9
+                  : sn.node.type === 'decision' ? 5 : 7.5;
+      const rad = Math.min(baseR + sn.degree * 1.1, baseR + 10);
+      const color = new THREE.Color(sn.node.color || '#3d4251');
+      const geo = new THREE.SphereGeometry(rad, 20, 20);
+      const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.35, roughness: 0.4, metalness: 0.1 });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(sn.x, sn.y, sn.z);
+      mesh.userData.node = sn.node;
+      mesh.userData.rad = rad;
+      mesh.userData.degree = sn.degree;
+      scene.add(mesh);
+      nodeMeshes.push({ mesh, node: sn.node });
+      sn.mesh = mesh;
+    });
+
+    updateEdgeGeometry();
+    settleFrames = SETTLE_TOTAL;
+  };
+
+  function stepSimulation(t) {
+    const REPULSION   = 900;
+    const SPRING      = 0.02;
+    const SPRING_LEN  = 55;
+    const CENTER_PULL = 0.004;
+    const DAMPING     = 0.82;
+
+    for (let i = 0; i < simNodes.length; i++) {
+      const a = simNodes[i];
+      let fx = 0, fy = 0, fz = 0;
+      for (let j = 0; j < simNodes.length; j++) {
+        if (i === j) continue;
+        const b = simNodes[j];
+        const dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
+        const distSq = dx * dx + dy * dy + dz * dz + 0.01;
+        const dist = Math.sqrt(distSq);
+        const f = REPULSION / distSq;
+        fx += (dx / dist) * f; fy += (dy / dist) * f; fz += (dz / dist) * f;
+      }
+      fx -= a.x * CENTER_PULL; fy -= a.y * CENTER_PULL; fz -= a.z * CENTER_PULL;
+      a.fx = fx; a.fy = fy; a.fz = fz;
+    }
+    simEdges.forEach(e => {
+      const a = simNodes[e.a], b = simNodes[e.b];
+      if (!a || !b) return;
+      const dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz) + 0.01;
+      const diff = (dist - SPRING_LEN) * SPRING;
+      const fx = (dx / dist) * diff, fy = (dy / dist) * diff, fz = (dz / dist) * diff;
+      a.fx += fx; a.fy += fy; a.fz += fz;
+      b.fx -= fx; b.fy -= fy; b.fz -= fz;
+    });
+
+    simNodes.forEach(a => {
+      a.vx = (a.vx + a.fx) * DAMPING * t;
+      a.vy = (a.vy + a.fy) * DAMPING * t;
+      a.vz = (a.vz + a.fz) * DAMPING * t;
+      a.x += a.vx; a.y += a.vy; a.z += a.vz;
+      if (a.mesh) a.mesh.position.set(a.x, a.y, a.z);
+    });
+
+    updateEdgeGeometry();
+  }
+
+  function onPointerMove(e) {
+    const rect = canvas3d.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  }
+  canvas3d.addEventListener('mousemove', onPointerMove);
+
+  canvas3d.addEventListener('click', () => {
+    raycaster.setFromCamera(mouse, camera);
+    const hits = raycaster.intersectObjects(nodeMeshes.map(m => m.mesh));
+    if (hits.length) {
+      const mesh = hits[0].object;
+      const node = mesh.userData.node;
+      detail.innerHTML =
+        '<div class="soma-3d-detail-close" onclick="document.getElementById(\'soma-3d-detail\').style.display=\'none\'">✕</div>' +
+        '<div class="soma-3d-detail-type">' + (node.type || '') + '</div>' +
+        '<div class="soma-3d-detail-label">' + (node.label || '') + '</div>' +
+        '<div class="soma-3d-detail-meta">' + mesh.userData.degree + ' connection' + (mesh.userData.degree === 1 ? '' : 's') + '</div>';
+      detail.style.display = 'block';
+    } else {
+      detail.style.display = 'none';
+    }
+  });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    if (settleFrames > 0) {
+      const t = settleFrames / SETTLE_TOTAL;
+      stepSimulation(Math.max(t, 0.06));
+      settleFrames--;
+    } else {
+      // Gentle idle breathing once settled — per Gemini's spec, nodes
+      // shouldn't drift aimlessly, but a fully static graph reads as dead.
+      simNodes.forEach((a, i) => {
+        if (!a.mesh) return;
+        const time = performance.now() * 0.0006 + i;
+        a.mesh.position.y = a.y + Math.sin(time) * 1.2;
+      });
+    }
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+}
 </script>
 </body>
 </html>
