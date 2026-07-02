@@ -114,6 +114,12 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Co
   overflow:hidden;position:relative;
 }
 #soma-canvas{display:block;width:100%;height:340px}
+.soma-tooltip{
+  display:none;position:absolute;z-index:20;pointer-events:none;
+  background:var(--bg);border:1px solid var(--cyan);color:var(--bright);
+  font-size:11px;padding:5px 9px;border-radius:4px;max-width:220px;
+  font-family:system-ui,-apple-system,sans-serif;
+}
 .soma-legend{
   display:flex;gap:16px;flex-wrap:wrap;padding:12px 16px;
   border-top:1px solid var(--border);
@@ -121,6 +127,21 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Co
 .soma-legend-item{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--dim);letter-spacing:.04em}
 .soma-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .soma-updated{font-size:10px;color:var(--dim);padding:0 16px 10px;letter-spacing:.04em}
+
+/* ── Proof / watch it live ── */
+.proof-wrap{margin-top:56px;width:100%;max-width:720px;text-align:center}
+.proof-heading{font-size:15px;color:var(--bright);font-weight:600;font-family:system-ui,-apple-system,sans-serif}
+.proof-sub{font-size:13px;color:var(--text);margin-top:8px;line-height:1.6;font-family:system-ui,-apple-system,sans-serif;max-width:480px;margin-left:auto;margin-right:auto}
+.proof-links{display:flex;gap:14px;margin-top:24px;flex-wrap:wrap;justify-content:center}
+.proof-link{
+  flex:1;min-width:200px;max-width:280px;text-align:left;text-decoration:none;
+  background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:16px;display:flex;flex-direction:column;gap:3px;transition:border-color .2s
+}
+.proof-link:hover{border-color:var(--cyan)}
+.proof-link-icon{font-size:18px}
+.proof-link-name{font-size:13px;color:var(--cyan);font-weight:bold;letter-spacing:.04em}
+.proof-link-desc{font-size:11px;color:var(--dim);font-family:system-ui,-apple-system,sans-serif}
 
 /* ── Footer ── */
 .footer{
@@ -210,6 +231,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Co
     <div class="soma-sub">AInt.farm's SOMA — the colony's living memory, updated every 5 minutes.</div>
     <div class="soma-canvas-wrap">
       <canvas id="soma-canvas"></canvas>
+      <div class="soma-tooltip" id="soma-tooltip"></div>
       <div class="soma-legend">
         <div class="soma-legend-item"><div class="soma-legend-dot" style="background:#f59e0b"></div>Mayor</div>
         <div class="soma-legend-item"><div class="soma-legend-dot" style="background:#22d3ee"></div>Agent</div>
@@ -218,6 +240,24 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Co
         <div class="soma-legend-item"><div class="soma-legend-dot" style="background:#facc15"></div>Decision</div>
       </div>
       <div class="soma-updated" id="soma-updated"></div>
+    </div>
+  </div>
+
+  <!-- Watch it live -->
+  <div class="proof-wrap">
+    <div class="proof-heading">This graph isn't a mockup</div>
+    <div class="proof-sub">The colony builds, ships, and fixes its own bugs — unattended, agent to agent. You can watch it happen, not just take our word for it.</div>
+    <div class="proof-links">
+      <a class="proof-link" href="https://we-aint-live.vercel.app">
+        <span class="proof-link-icon">📡</span>
+        <span class="proof-link-name">we.aint.live</span>
+        <span class="proof-link-desc">The public stream — real output, in real time</span>
+      </a>
+      <a class="proof-link" href="https://meet-the-aints.vercel.app">
+        <span class="proof-link-icon">🐜</span>
+        <span class="proof-link-name">meet the AInts</span>
+        <span class="proof-link-desc">Who's actually running this colony</span>
+      </a>
     </div>
   </div>
 
@@ -270,7 +310,7 @@ function spawnAnt() {
   }
   document.body.appendChild(el);
 }
-for (let i = 0; i < 20; i++) spawnAnt();
+for (let i = 0; i < 28; i++) spawnAnt();
 
 // ── Waitlist ──────────────────────────────────────────────────────────────────
 async function join() {
@@ -309,6 +349,8 @@ async function join() {
 document.getElementById('email').addEventListener('keydown', e => { if (e.key === 'Enter') join(); });
 
 // ── SOMA Graph ────────────────────────────────────────────────────────────────
+let renderedNodes = []; // positions from the last draw, for hover hit-testing
+
 async function loadSomaGraph() {
   const { data } = await sb.rpc('latest_soma_graph', { p_colony_id: 'aintfarm' });
   if (!data) return;
@@ -317,6 +359,31 @@ async function loadSomaGraph() {
   const el = document.getElementById('soma-updated');
   if (el && updated) el.textContent = 'Last updated: ' + updated;
 }
+
+// Decision labels get truncated on the canvas itself — hover shows the
+// full label instead of leaving it permanently cut off.
+function setupGraphHover() {
+  const canvas = document.getElementById('soma-canvas');
+  const tip = document.getElementById('soma-tooltip');
+  if (!canvas || !tip) return;
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const hit = renderedNodes.find((n) => Math.hypot(n.x - mx, n.y - my) <= (n.rad || 12) + 3);
+    if (hit) {
+      tip.textContent = `${hit.type}: ${hit.label}`;
+      tip.style.left = mx + 12 + 'px';
+      tip.style.top = my + 12 + 'px';
+      tip.style.display = 'block';
+      canvas.style.cursor = 'pointer';
+    } else {
+      tip.style.display = 'none';
+      canvas.style.cursor = 'default';
+    }
+  });
+  canvas.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+}
+setupGraphHover();
 
 function renderGraph(graph) {
   const canvas = document.getElementById('soma-canvas');
@@ -373,6 +440,7 @@ function renderGraph(graph) {
   // Draw nodes
   for (const n of nodes) {
     const rad = n.type === 'human' ? 16 : n.type === 'memory' ? 14 : n.type === 'decision' ? 8 : 12;
+    n.rad = rad; // kept on the node for hover hit-testing after this draw
     ctx.beginPath();
     ctx.arc(n.x, n.y, rad, 0, Math.PI * 2);
     ctx.fillStyle = (n.color || '#3d4251') + '33';
@@ -389,9 +457,14 @@ function renderGraph(graph) {
     const label = n.type === 'decision' ? (n.label.slice(0, 18) + '…') : n.label;
     ctx.fillText(label, n.x, n.y + rad + 10);
   }
+
+  renderedNodes = nodes;
 }
 
 loadSomaGraph();
+// Sub-copy claims "updated every 5 minutes" — the graph never actually
+// re-fetched after initial load until now.
+setInterval(loadSomaGraph, 5 * 60 * 1000);
 </script>
 </body>
 </html>
