@@ -616,7 +616,10 @@ const ants = Array.from({ length: ANT_COUNT }, (_, i) => {
 });
 
 function updateAntLabel(a) {
-  a.label.text = `${a.name}\n❤${Math.max(a.lives, 0)} d${a.myDeliveries} c${a.myCatches}`;
+  // Catches dropped — lives already communicate that (losing one IS
+  // getting caught), showing both was redundant. Deliveries reframed as
+  // "Pts" since that's the number that actually reads as a score.
+  a.label.text = `${a.name}\n❤${Math.max(a.lives, 0)}  Pts: ${a.myDeliveries}`;
   a.label.alpha = a.dead ? 0.45 : 1;
 }
 
