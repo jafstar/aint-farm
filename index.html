@@ -1,163 +1,123 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AInt.farm — An AI Production House — AInt.farm</title>
-<link rel="stylesheet" href="site.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Open%20Sans:wght@400;700&display=swap">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AInt.farm — An AI Production House</title>
+<meta name="description" content="AInt.farm is a human-directed colony of AI agents that builds and ships real software products — Round Table, Valid, Hoo R U, and DesignPipe. A human always makes the final call.">
+<link rel="stylesheet" href="styles.css">
 </head>
-<body class="dp-anim-ready">
-<header class="dp-header dp-header--full-bleed-wordmark">
-  <a href="index.html" class="dp-header__logo dp-logo-wipe">
-    <span class="dp-logo-mark">A<span class="dp-logo-mark__accent">I</span></span>
-    AInt.farm
-  </a>
-  <button type="button" class="dp-header__trigger" aria-expanded="false" aria-label="Open menu" id="navTrigger">
-    <span class="dp-header__trigger-mark" aria-hidden="true"></span>
-    <span class="dp-header__trigger-label">Menu</span>
-  </button>
-  <nav class="dp-mobile-nav" aria-hidden="true" id="mobileNav">
-    <ul class="dp-mobile-nav__list"><li><a href="index.html" class="dp-mobile-nav__link" aria-current="page">Home</a></li><li><a href="work.html" class="dp-mobile-nav__link">Work</a></li><li><a href="contact.html" class="dp-mobile-nav__link">Contact</a></li></ul>
-  </nav>
-  <nav class="dp-header__desktop-nav" aria-label="Primary">
-    <ul><li><a href="index.html" aria-current="page">Home</a></li><li><a href="work.html">Work</a></li><li><a href="contact.html">Contact</a></li></ul>
-  </nav>
+<body>
+
+<header>
+  <div class="nav-inner">
+    <a href="index.html" class="logo">
+      <span class="logo-mark">A</span>
+      <span>AInt.farm</span>
+    </a>
+    <nav>
+      <ul>
+        <li><a href="index.html" aria-current="page">Home</a></li>
+        <li><a href="work.html">Work</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a href="work.html" class="btn btn-outline">See the Work</a>
+      <a href="contact.html" class="btn btn-primary"><span class="label-full">Get in Touch</span><span class="label-short">Contact</span></a>
+      <button class="hamburger" aria-label="menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
 </header>
-<script>
-(function () {
-  var trigger = document.getElementById('navTrigger');
-  var nav = document.getElementById('mobileNav');
-  if (!trigger || !nav) return;
-  trigger.addEventListener('click', function () {
-    var open = trigger.getAttribute('aria-expanded') === 'true';
-    trigger.setAttribute('aria-expanded', String(!open));
-    trigger.setAttribute('aria-label', !open ? 'Close menu' : 'Open menu');
-    nav.classList.toggle('dp-mobile-nav--open', !open);
-    nav.setAttribute('aria-hidden', String(open));
-  });
-})();
-</script>
-<main>
-<section id="heroSection" class="dp-hero dp-hero--expressive dp-hero--ready" style="--dp-hero-accent:#25d8f4;--dp-hero-cta-accent:#20626d">
-  <div class="dp-hero__bg" aria-hidden="true">
-<div class="dp-hero__bg-layer dp-hero__bg-layer--0" style="background-color:#d3e6e8" aria-hidden="true"></div>
-<div class="dp-hero__bg-layer dp-hero__bg-layer--1" style="background-color:#0b7d8f" aria-hidden="true"></div>
-<div class="dp-hero__bg-layer dp-hero__bg-layer--2" style="background-color:#12d0ed" aria-hidden="true"></div>
-  </div>
-  <div id="dp-cinematic-hero-canvas" class="dp-hero__cinematic-canvas" aria-hidden="true"></div>
-  <div class="dp-hero__scrim" aria-hidden="true"></div>
-  <div class="dp-hero__content">
-    
-    <h1 class="dp-hero__headline">AInt.farm
-AI Production House</h1>
-    <p class="dp-hero__subhead">A human-directed colony of AI agents that builds and ships real software products. A human always makes the final call on what ships. See what's shipped below, or reach out directly.</p>
-    <a href="contact.html" class="dp-hero__cta dp-hoverable">Get in touch</a>
+
+<section class="hero">
+  <img class="hero-bg" src="hero-control-room.jpg" alt="A dim control room with a wall of monitors showing real running dashboards, two people reviewing the readouts, a small mechanical ant figure on the server rack, cyan cable lighting.">
+  <div class="hero-scrim"></div>
+  <div class="wrap hero-inner">
+    <span class="hero-badge"><span class="dot"></span>4 real products shipped</span>
+    <h1>AInt.farm — an <span>AI Production House</span></h1>
+    <p>A human-directed colony of AI agents that builds and ships real software products. Agents draft, critique, and refine each other's work. A human always makes the final call on what ships.</p>
+    <div class="hero-ctas">
+      <a href="work.html" class="btn btn-primary btn-lg">See What's Shipped</a>
+      <a href="contact.html" class="btn btn-outline btn-lg">Get in Touch</a>
+    </div>
   </div>
 </section>
-<section class="page-block" id="proof" data-dp-reveal>
-<p class="block-eyebrow">Gallery</p>
-<h1 class="tr-h1">Quick proof, not a pitch — real, live products, shipped by this colony.</h1>
-<div class="card-grid"><div class="card dp-hoverable"><p class="card-title">Round Table</p><p class="card-body tr-caption">A panel of independent AI reviewers (&quot;Knights&quot;) that critiques real business decisions before they ship.</p></div><div class="card dp-hoverable"><p class="card-title">Valid</p><p class="card-body tr-caption">A VS Code extension that intelligently routes between Gemini and Claude for real development work.</p></div><div class="card dp-hoverable"><p class="card-title">Hoo R U</p><p class="card-body tr-caption">A multi-agent council, live now at hooru.aint.farm — it debates with its user instead of just agreeing.</p></div><div class="card dp-hoverable"><p class="card-title">DesignPipe</p><p class="card-body tr-caption">designpipe.io — an AI-powered website diagnosis/redesign tool, also built by this colony. &quot;Built by AInts.&quot;</p></div></div>
-</section>
-<section class="page-block" id="closing-cta" data-dp-reveal>
-<p class="block-eyebrow">Cta</p>
-<p class="tr-caption">This isn't a portfolio piece. It isn't an art-game about AI agents. It's a working studio — a colony that ships, a human who signs off, software that stays live.<br><br>See the full track record on Work, or reach out on Contact.</p>
-</section>
-<section class="page-block" id="footer" data-dp-reveal>
-<p class="block-eyebrow">Footer</p>
-<h2 class="tr-h2">AInt.farm</h2>
-<p class="tr-caption">Brand reference — wordmark: monospace/technical, used site-wide · accent: cyan #22d3ee · ant motif: decorative only (favicon, corner mark), never dominant.<br><br>DesignPipe — designpipe.io (Built by AInts)<br><br>© AInt.farm — a colony of AI agents, one human veto.</p>
-</section>
-</main>
-<footer class="site-footer">AInt.farm</footer>
-<script>(function () {
-  function revealAll() {
-    document.querySelectorAll('[data-dp-reveal]').forEach(function (el) { el.classList.add('dp-revealed'); });
-  }
-  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduced || !('IntersectionObserver' in window)) { revealAll(); return; }
-  var observer = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      if (entry.isIntersecting) { entry.target.classList.add('dp-revealed'); observer.unobserve(entry.target); }
-    });
-  }, { threshold: 0.15 });
-  document.querySelectorAll('[data-dp-reveal]').forEach(function (el) { observer.observe(el); });
-  // Real bug found live: content below the fold rendered permanently
-  // invisible (opacity: 0 forever, real visible blank space where a whole
-  // section should be) for anything that renders the page without firing
-  // a real scroll — a full-page screenshot tool, a crawler, any renderer
-  // that doesn't simulate genuine scroll behavior. A bounded timeout
-  // fallback guarantees content is never PERMANENTLY hidden, while still
-  // keeping the real scroll-triggered reveal for actual interactive users
-  // within that window.
-  setTimeout(revealAll, 2500);
-})();</script>
-<script>(function () {
-  var today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-  document.querySelectorAll('.dp-visit__hours li').forEach(function (li) {
-    if (li.getAttribute('data-day') === today) li.classList.add('dp-visit__hours-row--today');
-  });
-})();</script>
-<script src="https://cdn.jsdelivr.net/npm/pixi.js@8/dist/pixi.min.js" defer></script>
-<script>(function () {
-  // Per motion-patterns-handoff.md: "either skipped or reduced to simple
-  // opacity changes" — skipping the whole particle system entirely is an
-  // explicitly valid reduced-motion response, checked immediately, before
-  // ever waiting on Pixi to load.
-  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduced) return;
-  var container = document.getElementById('dp-cinematic-hero-canvas');
-  if (!container) return;
-  // Real bug found live 2026-07-12: `defer` has no effect on inline
-  // scripts — it only applies to external <script src> elements. An
-  // inline script always runs immediately, in document order, DURING
-  // parsing, so a naive top-level `typeof PIXI === 'undefined'` check
-  // here fires before the deferred Pixi CDN <script> has had any chance
-  // to load, and this would silently no-op every single time. Waiting
-  // for the real `window` load event — which by spec fires only after
-  // every deferred script has already run — is what actually guarantees
-  // PIXI exists before this tries to use it.
-  window.addEventListener('load', function () {
-    // Graceful no-op if the CDN script genuinely failed to load — this
-    // must never be able to break the real page underneath it.
-    if (typeof PIXI === 'undefined') return;
-    (async function () {
-    var app = new PIXI.Application();
-    await app.init({ resizeTo: container, backgroundAlpha: 0, antialias: true });
-    // Purely decorative — must never intercept a click/tap meant for the
-    // real headline/subhead/CTA layered on top of it.
-    app.canvas.style.pointerEvents = 'none';
-    container.appendChild(app.canvas);
 
-    var color = 0x12d0ed;
-    var particles = [];
-    for (var i = 0; i < 40; i++) {
-      var size = 2 + Math.random() * (5 - 2);
-      var g = new PIXI.Graphics().circle(0, 0, size).fill({ color: color, alpha: 0.25 + Math.random() * 0.35 });
-      g.x = Math.random() * app.canvas.width;
-      g.y = Math.random() * app.canvas.height;
-      g.vy = -(0.35 + Math.random() * 0.35);
-      g.vx = 0;
-      g.driftSeed = Math.random() * Math.PI * 2;
-      app.stage.addChild(g);
-      particles.push(g);
-    }
+<section class="section" id="proof">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">$ status --check</span>
+      <h2>Quick proof, not a pitch.</h2>
+      <p>Real, live products, shipped by this colony — not decks, not "coming soon."</p>
+    </div>
+    <div class="proof-grid">
+      <div class="proof-card">
+        <span class="proof-status"><span class="dot"></span>Named proof point</span>
+        <h3>Round Table</h3>
+        <p>A panel of independent AI reviewers ("Knights") that critiques real business decisions before they ship.</p>
+      </div>
+      <div class="proof-card">
+        <span class="proof-status"><span class="dot"></span>Named proof point</span>
+        <h3>Valid</h3>
+        <p>A VS Code extension that intelligently routes between Gemini and Claude for real development work.</p>
+      </div>
+      <div class="proof-card">
+        <span class="proof-status is-live"><span class="dot"></span>Live</span>
+        <h3>Hoo R U</h3>
+        <p>A multi-agent council you can talk to right now. It debates with its user instead of just agreeing.</p>
+        <a class="proof-link" href="https://hooru.aint.farm" target="_blank" rel="noopener">hooru.aint.farm →</a>
+      </div>
+      <div class="proof-card">
+        <span class="proof-status is-live"><span class="dot"></span>Live</span>
+        <h3>DesignPipe</h3>
+        <p>An AI-powered website diagnosis and redesign tool, live in the wild — "Built by AInts," a direct line back here.</p>
+        <a class="proof-link" href="https://designpipe.io" target="_blank" rel="noopener">designpipe.io →</a>
+      </div>
+    </div>
+  </div>
+</section>
 
-    var elapsedMs = 0;
-    app.ticker.add(function (ticker) {
-      elapsedMs += ticker.deltaMS;
-      for (var i = 0; i < particles.length; i++) {
-        var p = particles[i];
-        p.y += p.vy * ticker.deltaTime;
-        p.x += (p.vx + Math.sin(elapsedMs / 1000 + p.driftSeed) * 0.3) * ticker.deltaTime;
-        if (p.y < -10) { p.y = app.canvas.height + 10; p.x = Math.random() * app.canvas.width; }
-        if (p.x < -10) p.x = app.canvas.width + 10;
-        if (p.x > app.canvas.width + 10) p.x = -10;
-      }
-    });
-    })();
-  });
-})();</script>
+<section class="cta-band">
+  <div class="wrap">
+    <h2>This isn't a portfolio piece.</h2>
+    <p>It isn't an art-game about AI agents. It's a working studio — a colony that ships, a human who signs off, software that stays live.</p>
+    <a href="work.html" class="btn btn-primary btn-lg">See the Full Track Record</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo">
+          <span class="logo-mark">A</span>
+          AInt.farm
+        </div>
+        <p>A human-directed colony of AI agents that builds and ships real software products.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Site</h4>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="work.html">Work</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="https://hooru.aint.farm" target="_blank" rel="noopener">Hoo R U</a></li>
+          <li><a href="https://designpipe.io" target="_blank" rel="noopener">DesignPipe</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© AInt.farm — a colony of AI agents, one human veto.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="main.js" defer></script>
 </body>
 </html>
