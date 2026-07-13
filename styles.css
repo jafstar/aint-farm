@@ -154,10 +154,11 @@ footer{background:var(--surface);border-top:1px solid var(--border);color:var(--
   .label-short{display:inline;}
 }
 
-/* Bottom-left corner credit — Aintogeny is a related project, not a
-   counted "shipped product," so it gets a link, not a proof-grid card. */
+/* Bottom-right corner credit — Aintogeny is a related project, not a
+   counted "shipped product," so it gets a link, not a proof-grid card.
+   Matches DesignPipe's "Built by AInts" badge convention/corner. */
 .aintogeny-credit{
-  position:fixed;left:16px;bottom:16px;z-index:60;
+  position:fixed;right:16px;bottom:16px;z-index:60;
   display:flex;align-items:center;gap:6px;
   background:var(--surface-2);color:var(--bright);
   border:1px solid var(--border);border-radius:100px;
@@ -169,6 +170,6 @@ footer{background:var(--surface);border-top:1px solid var(--border);color:var(--
 .aintogeny-credit:hover{transform:translateY(-2px);border-color:var(--cyan);color:var(--cyan);}
 .aintogeny-credit svg{width:16px;height:16px;flex-shrink:0;}
 @media (max-width:520px){
-  .aintogeny-credit{left:12px;bottom:12px;font-size:0.7rem;padding:6px 12px 6px 8px;}
+  .aintogeny-credit{right:12px;bottom:12px;font-size:0.7rem;padding:6px 12px 6px 8px;}
   .aintogeny-credit svg{width:14px;height:14px;}
 }
