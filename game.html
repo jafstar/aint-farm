@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AInt.farm — Ant Tunnel</title>
+<meta name="description" content="Walk your ant, dodge the predators, dig to the food. A live prototype from the AInt.farm colony.">
+<style>
+  /* Reframe (2026-07-09): the homepage IS the game now, not a marketing
+     page describing the colony — "ants walking around and the game" per
+     Mayor's direction. Old marketing/waitlist page is still in git
+     history (previous commit) if this needs to be reverted. */
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; min-height: 100%; background: #0a0b0e; overflow-x: hidden;
+    display: flex; flex-direction: column; align-items: center;
+    font-family: 'Consolas', 'Monaco', monospace;
+  }
+  #bgAnts {
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  }
+  #bgAnts canvas { display: block; }
+
+  /* Arcade-cabinet framing: a fixed phone-sized play area (GAME_W x
+     GAME_H below) centered in a dark bezel, scaled via JS to fit
+     whatever screen it's on — same fixed layout on a desktop monitor as
+     on an actual phone, just bigger, instead of the play field stretching
+     wide on desktop and narrow on mobile. Brand + level bar lives INSIDE
+     the cabinet now, not as a separate page header above it — one less
+     element competing for the top of the screen on a phone. */
+  #cabinet {
+    position: relative; z-index: 1; padding: 18px; border-radius: 22px; margin: 40px 0 30px;
+    background: linear-gradient(180deg, #2a2119, #16110c);
+    box-shadow: 0 20px 60px rgba(0,0,0,.6), inset 0 0 0 2px #3a2f22;
+  }
+  canvas { display: block; border-radius: 6px; }
+  #stats {
+    position: absolute; top: 28px; left: 28px; right: 28px; color: #5a4c38;
+    pointer-events: none;
+    background: rgba(244,241,234,.85); padding: 8px 12px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  #statsBrand { font-size: 13px; font-weight: bold; letter-spacing: .06em; color: #16110c; }
+  #statsBrand span { color: #0891b2; }
+  #statsMain { font-size: 13px; font-weight: bold; text-align: right; }
+  #startOverlay {
+    position: absolute; inset: 18px; z-index: 6; border-radius: 6px;
+    background: rgba(28,23,18,.9); color: #f4f1ea; display: flex;
+    flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; cursor: pointer; text-align: center; padding: 24px;
+  }
+  #startOverlay h2 { margin: 0; font-size: 16px; letter-spacing: .05em; }
+  #startOverlay .instructions { font-size: 13px; color: #f4f1ea; line-height: 1.6; max-width: 260px; }
+  #startOverlay .startBtn {
+    margin-top: 8px; font-family: inherit; font-size: 16px; font-weight: bold;
+    padding: 14px 36px; border-radius: 24px; border: none;
+    background: #22d3ee; color: #0d0e11; cursor: pointer;
+    box-shadow: 0 6px 18px rgba(34,211,238,.35);
+  }
+  #startOverlay .sub { font-size: 10px; opacity: .6; margin-top: 2px; }
+  #startOverlay .countdown { font-size: 64px; font-weight: bold; color: #22d3ee; }
+  #gameOverOverlay {
+    position: absolute; inset: 18px; z-index: 7; border-radius: 6px;
+    background: rgba(13,14,17,.88); color: #f4f1ea; display: none;
+    flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; text-align: center; padding: 24px;
+  }
+  #gameOverOverlay.open { display: flex; }
+  #gameOverOverlay h2 { margin: 0; font-size: 16px; letter-spacing: .05em; }
+  #gameOverOverlay .line { font-size: 12px; color: #b9ad98; }
+  #gameOverOverlay button {
+    margin-top: 6px; font-family: inherit; font-size: 13px; font-weight: bold;
+    padding: 8px 18px; border-radius: 18px; border: none;
+    background: #22d3ee; color: #0d0e11; cursor: pointer;
+  }
+  #err {
+    position: fixed; top: 10px; left: 12px; right: 12px; color: #f87171;
+    font: 12px 'Consolas', monospace; white-space: pre-wrap; display: none;
+    background: rgba(20,4,4,0.85); padding: 10px; border: 1px solid #f87171;
+    border-radius: 4px; max-height: 60vh; overflow: auto; z-index: 10;
+  }
+</style>
+</head>
+<body>
+<div id="bgAnts"></div>
+<div id="cabinet">
+  <div id="stats">
+    <div id="statsBrand">AI<span>NT.FARM</span></div>
+    <div id="statsMain">level 1/5</div>
+  </div>
+  <div id="startOverlay">
+    <h2>ANT TUNNEL</h2>
+    <div class="instructions">Tap to get the green food.<br>Avoid the red balls.</div>
+    <button class="startBtn" onclick="dismissStart()">START</button>
+    <div class="sub">two other ants help — they run on their own</div>
+  </div>
+  <div id="gameOverOverlay">
+    <h2>COLONY LOST</h2>
+    <div class="line" id="gameOverSummary"></div>
+    <button onclick="location.reload()">Retry</button>
+  </div>
+</div>
+<div id="err"></div>
+
+<script>
+  function showError(label, e) {
+    const box = document.getElementById('err');
+    box.style.display = 'block';
+    box.textContent += `[${label}] ${e && e.stack ? e.stack : e}\n\n`;
+  }
+  window.addEventListener('error', (e) => showError('window error', e.error || e.message));
+  window.addEventListener('unhandledrejection', (e) => showError('unhandled promise rejection', e.reason));
+</script>
+<script type="module">
+import * as PIXI from 'https://cdn.jsdelivr.net/npm/pixi.js@8/dist/pixi.min.mjs';
+import { createNoise2D } from 'https://cdn.jsdelivr.net/npm/simplex-noise@4/dist/esm/simplex-noise.js';
+
+try {
+
+// ── Setup — fixed phone-portrait internal resolution, not resizeTo:window.
+// A real arcade box has one screen size; this fits that screen to
+// whatever device is looking at it (see fitToViewport below) instead of
+// reflowing the whole layout per device. ───────────────────────────────
+const GAME_W = 390;
+const GAME_H = 780;
+
+const app = new PIXI.Application();
+await app.init({ width: GAME_W, height: GAME_H, background: '#f4f1ea', antialias: true, resolution: window.devicePixelRatio || 1, autoDensity: true });
+document.getElementById('cabinet').prepend(app.canvas);
+
+function fitToViewport() {
+  const margin = 90; // room for the cabinet bezel + note text
+  const scale = Math.min((window.innerWidth - margin) / GAME_W, (window.innerHeight - margin) / GAME_H, 1.8);
+  app.canvas.style.width = `${GAME_W * scale}px`;
+  app.canvas.style.height = `${GAME_H * scale}px`;
+}
+window.addEventListener('resize', fitToViewport);
+fitToViewport();
+
+const antTexture = await PIXI.Assets.load('/ant-sprite.svg');
+
+// ── Background ants — the original milestone-1 behavior (Mayor's very
+// first ant prototype tonight): pure noise-driven wander, no target, no
+// AI, no player control, no collision with anything. Purely decorative,
+// roaming the page behind the cabinet — a completely separate PixiJS
+// instance from the game itself, full-viewport and transparent, so it
+// has nothing to do with GAME_W/GAME_H or any game state. White tint to
+// read against the dark page background instead of the near-black the
+// sprite is natively drawn in. ─────────────────────────────────────────
+const bgApp = new PIXI.Application();
+await bgApp.init({ backgroundAlpha: 0, resizeTo: window, antialias: true });
+document.getElementById('bgAnts').appendChild(bgApp.canvas);
+
+const BG_ANT_COUNT = 6;
+const BG_MAX_SPEED = 1.3;
+const BG_STEER_FORCE = 0.06;
+const BG_NOISE_FREQ = 0.006;
+const BG_NOISE_TIME_STEP = 0.015;
+const bgNoise2D = createNoise2D();
+
+// Real ant sprite + a color-invert filter, not a tint — tint multiplies
+// a texture's existing color, and the ant SVG's fill is near-black
+// (rgb(7,6,7)); white tint on near-black is a no-op multiply (that's why
+// the earlier tint attempt stayed invisible). Inverting instead turns
+// that near-black silhouette into a near-white one, keeping the actual
+// ant shape instead of a drawn placeholder blob.
+const invertWhite = new PIXI.ColorMatrixFilter();
+invertWhite.negative(false);
+
+const bgAnts = Array.from({ length: BG_ANT_COUNT }, () => {
+  const sprite = new PIXI.Sprite(antTexture);
+  sprite.anchor.set(0.5);
+  sprite.width = 38;
+  sprite.height = 38;
+  sprite.alpha = 0.6;
+  sprite.filters = [invertWhite];
+  sprite.x = Math.random() * window.innerWidth;
+  sprite.y = Math.random() * window.innerHeight;
+  bgApp.stage.addChild(sprite);
+  return { sprite, vx: 0, vy: 0, heading: Math.random() * Math.PI * 2, noiseT: Math.random() * 1000 };
+});
+
+bgApp.ticker.add(() => {
+  for (const a of bgAnts) {
+    a.noiseT += BG_NOISE_TIME_STEP;
+    const n = bgNoise2D(a.noiseT * BG_NOISE_FREQ, 0);
+    // Softer turning than milestone 1's original 0.15 — that value reads
+    // fine at milestone 1's smaller scale, but at six-ants-on-a-full-page
+    // scale it curls into visible loops instead of covering real ground.
+    // No HOME_RADIUS tether here at all (that's anthill.html's thing, for
+    // staying near a chat-able spot) — this just needed to turn less
+    // sharply so walking reads as walking, not circling.
+    a.heading += n * 0.05;
+    a.vx += Math.cos(a.heading) * BG_STEER_FORCE;
+    a.vy += Math.sin(a.heading) * BG_STEER_FORCE;
+    const speed = Math.hypot(a.vx, a.vy);
+    if (speed > BG_MAX_SPEED) { a.vx = (a.vx / speed) * BG_MAX_SPEED; a.vy = (a.vy / speed) * BG_MAX_SPEED; }
+    a.sprite.x += a.vx;
+    a.sprite.y += a.vy;
+    // Smoothed toward the target angle (shortest-path wrap) instead of
+    // snapping straight to it — the snap was the actual "spins too much"
+    // complaint, most visible right after each ant spawns with zero
+    // velocity and the very first frames of motion swing the angle hard.
+    const targetRotation = Math.atan2(a.vy, a.vx) + Math.PI / 2;
+    let diff = targetRotation - a.sprite.rotation;
+    diff = ((diff + Math.PI) % (Math.PI * 2)) - Math.PI;
+    a.sprite.rotation += diff * 0.15;
+    // Wrap at the edges instead of despawning — an ambient background
+    // effect should never visibly run out of ants.
+    if (a.sprite.x < -20) a.sprite.x = window.innerWidth + 20;
+    if (a.sprite.x > window.innerWidth + 20) a.sprite.x = -20;
+    if (a.sprite.y < -20) a.sprite.y = window.innerHeight + 20;
+    if (a.sprite.y > window.innerHeight + 20) a.sprite.y = -20;
+  }
+});
+
+// ── Ground + tunnel — the maze isn't authored, it's dug. Solid earth
+// everywhere, and a cell only becomes passable-looking once an ant has
+// actually walked through it. No pathfinding needed: an ant just steers
+// toward its current goal (food, then home) in a straight-ish line, and
+// the tunnel is a visible record of where it's already been, not a
+// planning aid the ant reads. ─────────────────────────────────────────────
+const CELL = 16;
+
+const ground = new PIXI.Graphics().rect(0, 0, GAME_W, GAME_H).fill('#c9a876');
+app.stage.addChild(ground);
+
+// Light static speckle so the dirt reads as texture, not a flat color
+// fill — cheap (drawn once, never touched again) and covered over
+// naturally wherever the tunnel gets dug through it.
+const groundTexture = new PIXI.Graphics();
+for (let i = 0; i < 260; i++) {
+  groundTexture.circle(Math.random() * GAME_W, Math.random() * GAME_H, 0.6 + Math.random() * 1.2)
+    .fill({ color: '#0d0e11', alpha: 0.06 });
+}
+app.stage.addChild(groundTexture);
+
+// Dug cells are drawn once, appended incrementally to their own Graphics —
+// never cleared/redrawn from scratch, so cost scales with new tunnel dug
+// per frame, not total tunnel length so far.
+const tunnel = new PIXI.Graphics();
+app.stage.addChild(tunnel);
+const dug = new Set();
+
+function digAt(x, y) {
+  const c0 = Math.floor(x / CELL), r0 = Math.floor(y / CELL);
+  for (let dc = -1; dc <= 1; dc++) {
+    for (let dr = -1; dr <= 1; dr++) {
+      const key = `${c0 + dc},${r0 + dr}`;
+      if (dug.has(key)) continue;
+      dug.add(key);
+      // A lighter shade of the ground tan (#c9a876), not stark white —
+      // reads as "dug earth" next to undug earth, not a totally
+      // different material.
+      tunnel.rect((c0 + dc) * CELL, (r0 + dr) * CELL, CELL, CELL).fill('#d8c09c');
+    }
+  }
+}
+
+// ── Nest + food — rotated to north/south: nest up top, food at the
+// bottom. Offset horizontally from each other (not stacked on the same
+// x) so the natural path is a diagonal, not a straight vertical line —
+// partly to test whether a rock actually changes anything (see ROCKS
+// below), partly because a pure straight line was reading a bit flat on
+// its own. Predators still sweep the same horizontal band either way,
+// since the choke band is defined by y alone. ──────────────────────────
+const NEST = { x: GAME_W * 0.32, y: GAME_H * 0.12 };
+const FOOD = { x: GAME_W * 0.68, y: GAME_H * 0.88, radius: 16 };
+
+const nestMarker = new PIXI.Graphics().circle(0, 0, 18).stroke({ width: 3, color: '#0d0e11' });
+nestMarker.position.set(NEST.x, NEST.y);
+app.stage.addChild(nestMarker);
+
+// ── Pulse effect — a brief expanding, fading ring, reused at both ends
+// of a delivery run: gold at the nest when any ant drops food off (the
+// colony gaining something), green at the food when any ant picks it up
+// (the food itself reacting to being grabbed). Every ant triggers it, not
+// just the player's, since it's meant to read as the colony succeeding
+// together rather than a personal score popup. ──────────────────────────
+const pulses = [];
+const PULSE_DURATION_MS = 550;
+
+function triggerPulse(x, y, color) {
+  const g = new PIXI.Graphics().circle(0, 0, 20).stroke({ width: 3, color });
+  g.position.set(x, y);
+  app.stage.addChild(g);
+  pulses.push({ g, age: 0 });
+}
+
+const foodGlow = new PIXI.Graphics().circle(0, 0, FOOD.radius + 10).fill({ color: '#4ade80', alpha: 0.25 });
+foodGlow.position.set(FOOD.x, FOOD.y);
+app.stage.addChild(foodGlow);
+
+const foodMarker = new PIXI.Graphics().circle(0, 0, FOOD.radius).fill('#4ade80');
+foodMarker.position.set(FOOD.x, FOOD.y);
+app.stage.addChild(foodMarker);
+
+// ── Predators — each sweeps horizontally at the same fixed y (the direct
+// nest-to-food line), at its own constant speed. Motion is a plain
+// deterministic ping-pong per predator (not random) precisely so each
+// HAS a rhythm to learn — a random predator can't be trained against, a
+// periodic one can. Multiple predators out of sync with each other means
+// the combined danger pattern is more complex than any single one, and
+// gives the colony's memory more to actually do. ──────────────────────────
+const PREDATOR_Y = (NEST.y + FOOD.y) / 2;
+const PREDATOR_RADIUS = 16;
+
+// ── Levels — danger staggers, per Mayor's call: each level ups predator
+// count/speed and tightens the danger margin, same knobs the single-level
+// prototype already had. Deliveries-to-clear also rises slightly so later
+// levels aren't just "harder" but "longer," which matters once there's a
+// real difficulty curve to feel. A level clear rebuilds the predators
+// (new phases, new rhythm) and resets the colony's danger memory — "new
+// level, new pattern," not a carried-over one. The tunnel itself is left
+// alone; that's positive memory (the dig path), not tied to any one
+// predator rhythm. ─────────────────────────────────────────────────────
+const LEVELS = [
+  { predators: 1, speedBase: 1.1, speedStep: 0.0, margin: 0.13, deliveries: 3 },
+  { predators: 2, speedBase: 1.3, speedStep: 0.5, margin: 0.11, deliveries: 3 },
+  { predators: 3, speedBase: 1.5, speedStep: 0.7, margin: 0.09, deliveries: 4 },
+  { predators: 4, speedBase: 1.7, speedStep: 0.8, margin: 0.08, deliveries: 4 },
+  { predators: 5, speedBase: 1.9, speedStep: 0.9, margin: 0.07, deliveries: 5 },
+];
+let levelIndex = 0;
+let delivered = 0;
+let DANGER_MARGIN = LEVELS[0].margin;
+
+// ── Timer pressure — per Mayor's call: stalling on a level shouldn't be
+// free. Every TIMER_INTERVAL_MS without clearing the level, one more
+// predator joins (up to EXTRA_PREDATOR_CAP), on top of whatever the
+// level's own base count already is — a second, independent clock
+// alongside "did you deliver enough," so lingering has a real cost. ─────
+const TIMER_INTERVAL_MS = 10000;
+const EXTRA_PREDATOR_CAP = 2;
+let levelElapsedMs = 0;
+let extraPredatorsAdded = 0;
+
+// Darker outer ring + lighter offset inner fill instead of a flat circle
+// — a cheap way to read as a sphere rather than a flat dot.
+function makePredatorMarker() {
+  const g = new PIXI.Graphics();
+  g.circle(0, 0, PREDATOR_RADIUS).fill('#b91c1c');
+  g.circle(-2, -3, PREDATOR_RADIUS * 0.62).fill({ color: '#f87171', alpha: 0.95 });
+  return g;
+}
+
+let predators = [];
+function buildPredators(level) {
+  for (const p of predators) { app.stage.removeChild(p.marker); p.marker.destroy(); }
+  DANGER_MARGIN = level.margin;
+  levelElapsedMs = 0;
+  extraPredatorsAdded = 0;
+  predators = Array.from({ length: level.predators }, (_, i) => {
+    const speed = level.speedBase + i * level.speedStep; // deliberately different so they drift out of phase with each other
+    const marker = makePredatorMarker();
+    marker.position.set((GAME_W / level.predators) * i, PREDATOR_Y);
+    app.stage.addChild(marker);
+    return { x: marker.x, dir: 1, speed, marker, dangerPhases: [] };
+  });
+}
+buildPredators(LEVELS[levelIndex]);
+
+function addExtraPredator() {
+  const level = LEVELS[levelIndex];
+  const speed = level.speedBase + predators.length * level.speedStep * 0.6;
+  const marker = makePredatorMarker();
+  marker.position.set(Math.random() * GAME_W, PREDATOR_Y);
+  app.stage.addChild(marker);
+  predators.push({ x: marker.x, dir: Math.random() < 0.5 ? 1 : -1, speed, marker, dangerPhases: [] });
+}
+
+function predatorPhase(p) {
+  // 0 at the left edge of the sweep, 1 at the right, back to 0 — a stable
+  // number every ant can compare that predator's own memory against,
+  // independent of frame rate or exact pixel position.
+  return p.x / GAME_W;
+}
+
+// ── Choke band — the strip of y-values an ant is actually exposed in.
+// Danger memory only needs to matter here; outside the band the ant just
+// walks normally, same as before predators existed. ───────────────────────
+const CHOKE_HALF_HEIGHT = 34;
+const CHOKE_MIN_Y = PREDATOR_Y - CHOKE_HALF_HEIGHT;
+const CHOKE_MAX_Y = PREDATOR_Y + CHOKE_HALF_HEIGHT;
+const HOLD_Y_OFFSET = CHOKE_HALF_HEIGHT + 18; // where an ant waits, just outside the band
+
+// ── Rocks — a physical obstacle, testing whether "burrow around it" needs
+// real pathfinding or just steering (see conversation: for one or two
+// scattered obstacles in open ground, it's steering — a soft repulsion so
+// ants curve around ahead of time, plus a hard collision as a backstop so
+// no one clips through if the curve wasn't enough). Positions are random
+// per page load — retries a few times to avoid landing on top of each
+// other or sitting exactly on the predator's fixed sweep line, where a
+// rock would just look like it's floating inside a predator that passes
+// through it. ─────────────────────────────────────────────────────────
+const ROCK_COUNT = 2;
+const ROCK_MIN_SEPARATION = 70;
+
+function randomRockPosition(existing) {
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const x = GAME_W * (0.15 + Math.random() * 0.7);
+    const y = GAME_H * (0.22 + Math.random() * 0.56);
+    if (Math.abs(y - PREDATOR_Y) < 40) continue; // keep clear of the predator's sweep line
+    if (existing.some((r) => Math.hypot(r.x - x, r.y - y) < ROCK_MIN_SEPARATION)) continue;
+    return { x, y, half: 14 };
+  }
+  return { x: GAME_W * 0.5, y: GAME_H * 0.65, half: 14 }; // fallback if unlucky 30 times in a row
+}
+
+const ROCKS = [];
+for (let i = 0; i < ROCK_COUNT; i++) ROCKS.push(randomRockPosition(ROCKS));
+const ROCK_AVOID_RADIUS = 50;
+
+for (const r of ROCKS) {
+  // Dark base + a lighter offset highlight instead of a flat square —
+  // enough to read as a rock, not a solid-color placeholder box.
+  const g = new PIXI.Graphics();
+  g.roundRect(-r.half, -r.half, r.half * 2, r.half * 2, 3).fill('#524d43');
+  g.roundRect(-r.half + 3, -r.half + 3, r.half * 1.3, r.half * 1.1, 2).fill({ color: '#8a8272', alpha: 0.75 });
+  g.position.set(r.x, r.y);
+  app.stage.addChild(g);
+}
+
+function rockAvoidForce(a) {
+  let fx = 0, fy = 0;
+  for (const r of ROCKS) {
+    const dx = a.sprite.x - r.x, dy = a.sprite.y - r.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    if (dist < ROCK_AVOID_RADIUS) {
+      const strength = (1 - dist / ROCK_AVOID_RADIUS) * 0.12;
+      fx += (dx / dist) * strength;
+      fy += (dy / dist) * strength;
+    }
+  }
+  return { fx, fy };
+}
+
+function resolveRockCollision(a) {
+  const pad = 9; // rough ant collision radius
+  for (const r of ROCKS) {
+    const minX = r.x - r.half - pad, maxX = r.x + r.half + pad;
+    const minY = r.y - r.half - pad, maxY = r.y + r.half + pad;
+    if (a.sprite.x <= minX || a.sprite.x >= maxX || a.sprite.y <= minY || a.sprite.y >= maxY) continue;
+    // Push back out along whichever axis has the smaller overlap, so it
+    // reads as sliding along the edge rather than snapping to a corner.
+    const overlapX = Math.min(a.sprite.x - minX, maxX - a.sprite.x);
+    const overlapY = Math.min(a.sprite.y - minY, maxY - a.sprite.y);
+    if (overlapX < overlapY) {
+      a.sprite.x = (a.sprite.x - minX < maxX - a.sprite.x) ? minX : maxX;
+      a.vx = 0;
+    } else {
+      a.sprite.y = (a.sprite.y - minY < maxY - a.sprite.y) ? minY : maxY;
+      a.vy = 0;
+    }
+  }
+}
+
+// ── Colony danger memory — the actual SOMA stand-in. Not per-ant: shared
+// across the whole colony, same as the tunnel is shared, because the
+// point is that what one ant learns changes what the others do too. A
+// catch records that predator's own phase at that moment; before
+// crossing, an ant checks whether any predator's CURRENT phase is close
+// to one that has hurt the colony before, and holds back if so. Nothing
+// here special-cases "predator" beyond reading a live phase — this is
+// the same shape as remembering a food location, just negative instead
+// of positive. Each predator keeps its own phase history since they're
+// deliberately out of sync with each other (see LEVELS above). DANGER_MARGIN
+// itself is declared with the levels above since it changes per level. ───
+const DANGER_HISTORY_CAP = 12;
+let caughtCount = 0;
+
+function anyPhaseDangerousNow() {
+  return predators.some((p) => p.dangerPhases.some((dp) => Math.abs(dp - predatorPhase(p)) < DANGER_MARGIN));
+}
+
+function recordCatch(p) {
+  p.dangerPhases.push(predatorPhase(p));
+  if (p.dangerPhases.length > DANGER_HISTORY_CAP) p.dangerPhases.shift();
+  caughtCount++;
+  updateStats();
+}
+
+function updateStats() {
+  // Just time + level now — deliveries/catches/danger-windows-learned
+  // were debug-grade detail useful for building this, not for playing
+  // it, so they're gone from the UI entirely rather than just demoted.
+  const timeLeft = extraPredatorsAdded < EXTRA_PREDATOR_CAP
+    ? `${Math.max(0, Math.ceil((TIMER_INTERVAL_MS * (extraPredatorsAdded + 1) - levelElapsedMs) / 1000))}s  ·  `
+    : '';
+  document.getElementById('statsMain').textContent = `${timeLeft}level ${levelIndex + 1}/${LEVELS.length}`;
+}
+
+function advanceLevel() {
+  levelIndex = (levelIndex + 1) % LEVELS.length; // loops back to level 1 after level 5 for continued play
+  delivered = 0;
+  caughtCount = 0;
+  buildPredators(LEVELS[levelIndex]);
+  for (const a of ants) {
+    a.sprite.x = NEST.x + (Math.random() - 0.5) * 24;
+    a.sprite.y = NEST.y + (Math.random() - 0.5) * 24;
+    a.vx = 0; a.vy = 0;
+    a.carryingFood = false;
+  }
+  updateStats();
+}
+
+// Initial stats readout — everything it reads is initialized by now,
+// unlike the earlier attempt to call this right after buildPredators()
+// above, which threw (caughtCount/delivered are declared with let further
+// down textually, so they're in the temporal dead zone until this point).
+updateStats();
+
+// ── Ants — seek food, then seek home, digging as they go. Small random
+// jitter on top of the seek force so multiple ants don't all cut the exact
+// same line (reads as a colony, not one ant times three). Two layers of
+// avoidance, matching Mayor's "like Frogger for ants" call:
+//   1. Reactive (live): a predator actually close by right now freezes
+//      the ant in place, no memory needed — the immediate "it's right
+//      there" reflex.
+//   2. Learned (proactive): approaching the band when the colony's danger
+//      memory says this part of the rhythm has hurt before holds the ant
+//      just outside, before it ever gets close enough to need the reflex.
+// A short speed boost while actually inside the band sells the "dart
+// across when it's clear" read instead of a flat, constant pace. ─────────
+const ANT_COUNT = 3;
+const MAX_SPEED = 1.5;
+const STEER_FORCE = 0.05;
+const JITTER = 0.03;
+const SPOT_RADIUS = PREDATOR_RADIUS + 55;
+const DASH_SPEED_MULT = 1.6;
+
+const STARTING_LIVES = 3;
+let gameOver = false;
+
+// Ants hold at the nest until the player actually starts the run — no
+// AI seeking, no idle drift, arcade "insert coin" beat instead of the
+// colony already being mid-stride the instant the page loads. Predators
+// keep patrolling underneath this — only the ants wait.
+let started = false;
+window.dismissStart = function dismissStart() {
+  // Countdown replaces the button/instructions instead of starting
+  // instantly — the beat itself (3, 2, 1, GO) is what sells "get ready,"
+  // an instant unfreeze doesn't.
+  const overlay = document.getElementById('startOverlay');
+  overlay.innerHTML = '<div class="countdown" id="countdownNum">3</div>';
+  const steps = ['3', '2', '1', 'GO'];
+  let i = 0;
+  const iv = setInterval(() => {
+    i++;
+    if (i < steps.length) {
+      document.getElementById('countdownNum').textContent = steps[i];
+    } else {
+      clearInterval(iv);
+      overlay.style.display = 'none';
+      started = true;
+    }
+  }, 700);
+};
+
+// Names + a per-ant scoreboard — groundwork for real personalities later
+// (same three-persona set the rest of the colony already uses), but
+// tonight that's just a name and a running tally, not chat. The player's
+// own ant reuses whatever name was already set on this device/browser
+// from Ant Hill, if any — a nice bit of continuity rather than asking
+// again.
+const ANT_NAMES = [localStorage.getItem('anthill_player_name') || 'You', 'Horatio', 'Quixote'];
+
+// Scoreboard sits in a fixed row below the food, not floating over each
+// ant — per-ant labels that follow the ants around were distracting to
+// track while also watching the actual gameplay. The player's dot is
+// cyan (matching their ant's tint) so it's identifiable at a glance;
+// AI ants get a neutral dot — groundwork for eventually letting the
+// player pick which ant is theirs, not just always ant 0.
+const SCOREBOARD_TOP = FOOD.y + FOOD.radius + 14;
+
+const ants = Array.from({ length: ANT_COUNT }, (_, i) => {
+  const sprite = new PIXI.Sprite(antTexture);
+  sprite.anchor.set(0.5);
+  sprite.width = 18;
+  sprite.height = 18;
+  sprite.x = NEST.x + (Math.random() - 0.5) * 24;
+  sprite.y = NEST.y + (Math.random() - 0.5) * 24;
+  app.stage.addChild(sprite);
+  // A fixed per-ant sideways offset from the direct nest-food line — small
+  // enough to stay inside the pickup/dropoff capture radius, but enough
+  // that the colony reads as several ants on parallel paths instead of
+  // one ant's path repeated three times. Only matters in AI mode — the
+  // manual ant goes exactly where it's tapped.
+  const laneOffset = (i - (ANT_COUNT - 1) / 2) * 16;
+
+  // Ant 0 is always the player's — tap anywhere to walk it, same
+  // mechanic as Ant Hill's player ant. The other two are permanently AI,
+  // per Mayor's call to drop the per-ant mode toggle in favor of one
+  // fixed player ant.
+  const isPlayer = i === 0;
+  if (isPlayer) sprite.tint = 0x22d3ee;
+
+  const colX = GAME_W * ((i + 1) / (ANT_COUNT + 1));
+  const dot = new PIXI.Graphics().circle(0, 0, 4).fill(isPlayer ? '#22d3ee' : '#9c8a6c');
+  dot.position.set(colX, SCOREBOARD_TOP);
+  app.stage.addChild(dot);
+
+  const label = new PIXI.Text({ text: '', style: { fontFamily: 'Consolas, Monaco, monospace', fontSize: 10, fill: '#5a4c38', align: 'center' } });
+  label.anchor.set(0.5, 0);
+  label.position.set(colX, SCOREBOARD_TOP + 8);
+  app.stage.addChild(label);
+
+  const ant = {
+    sprite, vx: 0, vy: 0, carryingFood: false, laneOffset,
+    lives: STARTING_LIVES, dead: false,
+    mode: isPlayer ? 'manual' : 'ai', manualTarget: null,
+    name: ANT_NAMES[i], label, myDeliveries: 0, myCatches: 0,
+  };
+  updateAntLabel(ant);
+  return ant;
+});
+
+function updateAntLabel(a) {
+  // Catches dropped — lives already communicate that (losing one IS
+  // getting caught), showing both was redundant. Deliveries reframed as
+  // "Pts" since that's the number that actually reads as a score.
+  a.label.text = `${a.name}\n❤${Math.max(a.lives, 0)}  Pts: ${a.myDeliveries}`;
+  a.label.alpha = a.dead ? 0.45 : 1;
+}
+
+app.stage.eventMode = 'static';
+app.stage.hitArea = new PIXI.Rectangle(0, 0, GAME_W, GAME_H);
+app.stage.on('pointerdown', (e) => {
+  const player = ants[0];
+  if (!player.dead) player.manualTarget = { x: e.global.x, y: e.global.y };
+});
+
+function loseLife(a) {
+  a.lives--;
+  a.myCatches++;
+  if (a.lives <= 0) {
+    a.dead = true;
+    a.sprite.visible = false; // sprite disappears, scoreboard entry stays (dimmed) so its final tally is still readable
+  }
+  updateAntLabel(a);
+
+  if (ants.every((x) => x.dead)) {
+    gameOver = true;
+    const totalDelivered = ants.reduce((sum, x) => sum + x.myDeliveries, 0);
+    document.getElementById('gameOverSummary').textContent =
+      `Reached level ${levelIndex + 1}/${LEVELS.length} — ${totalDelivered} total deliveries.`;
+    document.getElementById('gameOverOverlay').classList.add('open');
+  }
+}
+
+function caughtBy(a) {
+  for (const p of predators) {
+    if (Math.hypot(a.sprite.x - p.x, a.sprite.y - PREDATOR_Y) < PREDATOR_RADIUS + 6) return p;
+  }
+  return null;
+}
+
+function nearestPredatorDist(a) {
+  let min = Infinity;
+  for (const p of predators) min = Math.min(min, Math.hypot(a.sprite.x - p.x, a.sprite.y - PREDATOR_Y));
+  return min;
+}
+
+function antStep(a) {
+  const target = a.carryingFood ? NEST : FOOD;
+  const inBand = a.sprite.y > CHOKE_MIN_Y && a.sprite.y < CHOKE_MAX_Y;
+
+  if (a.mode === 'manual') {
+    // Player drives — no AI reflex, no learned hold, no dash boost. The
+    // predators and lives system don't care how an ant is being moved, so
+    // getting caught still costs a life same as always; the whole point
+    // is that dodging becomes your problem instead of the colony's.
+    if (a.manualTarget) {
+      const dx = a.manualTarget.x - a.sprite.x, dy = a.manualTarget.y - a.sprite.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 6) { a.manualTarget = null; a.vx = 0; a.vy = 0; }
+      else { a.vx += (dx / dist) * STEER_FORCE * 1.6; a.vy += (dy / dist) * STEER_FORCE * 1.6; }
+    } else {
+      // No destination set — a manual ant holds still, it doesn't wander
+      // on its own. A hard stop, not a decay, so it doesn't drift after
+      // arriving or right after switching into manual.
+      a.vx = 0;
+      a.vy = 0;
+    }
+  } else {
+    const nearBand = a.sprite.y > CHOKE_MIN_Y - SPOT_RADIUS && a.sprite.y < CHOKE_MAX_Y + SPOT_RADIUS;
+    const approachingBand = (a.sprite.y < CHOKE_MIN_Y && target.y > CHOKE_MIN_Y)
+      || (a.sprite.y > CHOKE_MAX_Y && target.y < CHOKE_MAX_Y);
+    const spotted = nearBand && nearestPredatorDist(a) < SPOT_RADIUS;
+
+    if (spotted && (inBand || approachingBand)) {
+      // Frogger reflex — something is actually close right now, freeze
+      // regardless of what memory says. This is the safety net for danger
+      // windows the colony hasn't learned yet.
+      a.vx *= 0.7;
+      a.vy *= 0.7;
+    } else if (approachingBand && anyPhaseDangerousNow()) {
+      // Learned hold — memory says don't even start, before it gets close
+      // enough to need the reflex above.
+      const holdY = target.y > a.sprite.y ? CHOKE_MIN_Y - HOLD_Y_OFFSET : CHOKE_MAX_Y + HOLD_Y_OFFSET;
+      const dy = holdY - a.sprite.y;
+      a.vy += Math.sign(dy) * STEER_FORCE * 0.6;
+      a.vx *= 0.9;
+    } else {
+      const dx = (target.x + a.laneOffset) - a.sprite.x, dy = target.y - a.sprite.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      a.vx += (dx / dist) * STEER_FORCE + (Math.random() - 0.5) * JITTER;
+      a.vy += (dy / dist) * STEER_FORCE + (Math.random() - 0.5) * JITTER;
+
+      // Curve around the rock ahead of time — only in normal open-ground
+      // seeking, not while holding for a predator or reacting to one, so
+      // the two avoidance concerns don't fight each other.
+      const avoid = rockAvoidForce(a);
+      a.vx += avoid.fx;
+      a.vy += avoid.fy;
+    }
+  }
+
+  const speedCap = inBand ? MAX_SPEED * DASH_SPEED_MULT : MAX_SPEED;
+  const speed = Math.hypot(a.vx, a.vy);
+  if (speed > speedCap) { a.vx = (a.vx / speed) * speedCap; a.vy = (a.vy / speed) * speedCap; }
+
+  a.sprite.x += a.vx;
+  a.sprite.y += a.vy;
+  if (speed > 0.01) a.sprite.rotation = Math.atan2(a.vy, a.vx) + Math.PI / 2;
+
+  // Hard backstop for every ant, manual included — the rock is solid
+  // regardless of how you got close to it.
+  resolveRockCollision(a);
+
+  digAt(a.sprite.x, a.sprite.y);
+
+  const catcher = inBand ? caughtBy(a) : null;
+  if (catcher) {
+    recordCatch(catcher);
+    loseLife(a);
+    if (a.dead) return;
+    a.sprite.x = NEST.x + (Math.random() - 0.5) * 24;
+    a.sprite.y = NEST.y + (Math.random() - 0.5) * 24;
+    a.vx = 0; a.vy = 0;
+    a.carryingFood = false;
+    return;
+  }
+
+  const distToTarget = Math.hypot(target.x - a.sprite.x, target.y - a.sprite.y);
+  if (!a.carryingFood && distToTarget < FOOD.radius + 6) {
+    a.carryingFood = true;
+    triggerPulse(FOOD.x, FOOD.y, '#4ade80');
+  }
+  if (a.carryingFood && distToTarget < 20) {
+    a.carryingFood = false; // dropped off at the nest, heads back out
+    a.myDeliveries++;
+    updateAntLabel(a);
+    triggerPulse(NEST.x, NEST.y, '#fbbf24');
+    delivered++;
+    if (delivered >= LEVELS[levelIndex].deliveries) advanceLevel();
+    else updateStats();
+  }
+}
+
+let lastStatsSecond = -1;
+
+app.ticker.add((ticker) => {
+  // Runs even after game-over so an in-flight pulse finishes and cleans
+  // itself up instead of freezing mid-animation.
+  for (let i = pulses.length - 1; i >= 0; i--) {
+    const p = pulses[i];
+    p.age += ticker.deltaMS;
+    const progress = Math.min(p.age / PULSE_DURATION_MS, 1);
+    p.g.scale.set(1 + progress * 3);
+    p.g.alpha = 1 - progress;
+    if (progress >= 1) {
+      app.stage.removeChild(p.g);
+      p.g.destroy();
+      pulses.splice(i, 1);
+    }
+  }
+
+  if (gameOver) return;
+
+  for (const p of predators) {
+    p.x += p.speed * p.dir;
+    if (p.x > GAME_W) { p.x = GAME_W; p.dir = -1; }
+    if (p.x < 0) { p.x = 0; p.dir = 1; }
+    p.marker.position.set(p.x, PREDATOR_Y);
+  }
+
+  for (const a of ants) {
+    if (a.dead) continue;
+    if (started) antStep(a);
+  }
+
+  if (started) {
+    levelElapsedMs += ticker.deltaMS;
+    if (extraPredatorsAdded < EXTRA_PREDATOR_CAP && levelElapsedMs >= TIMER_INTERVAL_MS * (extraPredatorsAdded + 1)) {
+      extraPredatorsAdded++;
+      addExtraPredator();
+    }
+    // Recompute the countdown display once a second, not every frame —
+    // the number only changes on whole seconds so there's no point
+    // touching the DOM 60x/sec for it.
+    const second = Math.floor(levelElapsedMs / 1000);
+    if (second !== lastStatsSecond) { lastStatsSecond = second; updateStats(); }
+  }
+});
+
+} catch (e) {
+  showError('module init', e);
+}
+</script>
+</body>
+</html>

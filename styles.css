@@ -75,7 +75,7 @@ nav a:hover, nav a[aria-current="page"]{color:var(--cyan);border-color:var(--cya
 .section-head p{color:var(--text);font-size:1.02rem;}
 
 /* Proof cards — the real shipped products */
-.proof-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
+.proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
 .proof-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:26px 22px;transition:border-color .15s ease, transform .15s ease;}
 .proof-card:hover{border-color:var(--cyan);transform:translateY(-2px);}
 .proof-status{display:inline-flex;align-items:center;gap:6px;font-size:0.7rem;font-weight:700;font-family:'Consolas','Monaco','Courier New',monospace;letter-spacing:0.04em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;}
