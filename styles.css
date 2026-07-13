@@ -75,7 +75,7 @@ nav a:hover, nav a[aria-current="page"]{color:var(--cyan);border-color:var(--cya
 .section-head p{color:var(--text);font-size:1.02rem;}
 
 /* Proof cards — the real shipped products */
-.proof-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;max-width:760px;}
+.proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
 
 /* The AInt.farm -> DesignPipe -> WeFixUgly proof chain */
 .chain{display:flex;align-items:stretch;gap:20px;margin-top:8px;}
@@ -152,4 +152,23 @@ footer{background:var(--surface);border-top:1px solid var(--border);color:var(--
   .footer-grid{grid-template-columns:1fr;}
   .label-full{display:none;}
   .label-short{display:inline;}
+}
+
+/* Bottom-left corner credit — Aintogeny is a related project, not a
+   counted "shipped product," so it gets a link, not a proof-grid card. */
+.aintogeny-credit{
+  position:fixed;left:16px;bottom:16px;z-index:60;
+  display:flex;align-items:center;gap:6px;
+  background:var(--surface-2);color:var(--bright);
+  border:1px solid var(--border);border-radius:100px;
+  padding:7px 14px 7px 10px;font-size:0.78rem;font-weight:600;
+  font-family:'Consolas','Monaco','Courier New',monospace;
+  box-shadow:0 6px 18px rgba(0,0,0,0.35);
+  transition:transform .15s ease, border-color .15s ease;
+}
+.aintogeny-credit:hover{transform:translateY(-2px);border-color:var(--cyan);color:var(--cyan);}
+.aintogeny-credit svg{width:16px;height:16px;flex-shrink:0;}
+@media (max-width:520px){
+  .aintogeny-credit{left:12px;bottom:12px;font-size:0.7rem;padding:6px 12px 6px 8px;}
+  .aintogeny-credit svg{width:14px;height:14px;}
 }
