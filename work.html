@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What We've Shipped &amp; How We Work — AInt.farm</title>
+<link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Open%20Sans:wght@400;700&display=swap">
+</head>
+<body class="dp-anim-ready">
+<header class="dp-header dp-header--full-bleed-wordmark">
+  <a href="index.html" class="dp-header__logo dp-logo-wipe">
+    <span class="dp-logo-mark">A<span class="dp-logo-mark__accent">I</span></span>
+    AInt.farm
+  </a>
+  <button type="button" class="dp-header__trigger" aria-expanded="false" aria-label="Open menu" id="navTrigger">
+    <span class="dp-header__trigger-mark" aria-hidden="true"></span>
+    <span class="dp-header__trigger-label">Menu</span>
+  </button>
+  <nav class="dp-mobile-nav" aria-hidden="true" id="mobileNav">
+    <ul class="dp-mobile-nav__list"><li><a href="index.html" class="dp-mobile-nav__link">Home</a></li><li><a href="work.html" class="dp-mobile-nav__link" aria-current="page">Work</a></li><li><a href="contact.html" class="dp-mobile-nav__link">Contact</a></li></ul>
+  </nav>
+  <nav class="dp-header__desktop-nav" aria-label="Primary">
+    <ul><li><a href="index.html">Home</a></li><li><a href="work.html" aria-current="page">Work</a></li><li><a href="contact.html">Contact</a></li></ul>
+  </nav>
+</header>
+<script>
+(function () {
+  var trigger = document.getElementById('navTrigger');
+  var nav = document.getElementById('mobileNav');
+  if (!trigger || !nav) return;
+  trigger.addEventListener('click', function () {
+    var open = trigger.getAttribute('aria-expanded') === 'true';
+    trigger.setAttribute('aria-expanded', String(!open));
+    trigger.setAttribute('aria-label', !open ? 'Close menu' : 'Open menu');
+    nav.classList.toggle('dp-mobile-nav--open', !open);
+    nav.setAttribute('aria-hidden', String(open));
+  });
+})();
+</script>
+<main>
+<section class="page-header-band">
+  <h1 class="tr-h1"><span class="dp-stagger-word">What</span> <span class="dp-stagger-word">We've</span> <span class="dp-stagger-word">Shipped</span> <span class="dp-stagger-word">&amp;</span> <span class="dp-stagger-word">How</span> <span class="dp-stagger-word">We</span> <span class="dp-stagger-word">Work</span></h1>
+</section>
+<section class="page-block" id="hero" data-dp-reveal>
+<p class="block-eyebrow">Hero</p>
+<h1 class="tr-h1">$ status --check</h1>
+<h3 class="tr-h3">REAL, SHIPPED EVIDENCE — NOT VAPORWARE.</h3>
+<p class="tr-caption">Four live products, built by an AI colony: drafted by agents, argued over by agents, and signed off by a human before anything ships. No decks. No 'coming soon.' Just running code you can open right now.</p>
+</section>
+<section class="page-block" id="about" data-dp-reveal>
+<p class="block-eyebrow">About</p>
+<h2 class="tr-h2">HOW THE COLONY WORKS</h2>
+<p class="tr-body">&gt; THE MAYOR<br>directs the work — sets the goal, coordinates the agents, keeps the project honest.<br><br>&gt; THE AGENTS<br>draft, critique, and refine. Multiple agents produce work, then tear into each other's output until it holds up. Round Table's 'Knights' are this exact process running in production — a panel built to argue, not agree.<br><br>&gt; THE HUMAN<br>makes the final call. Every ship decision passes through human judgment. No exceptions.<br><br>This is not an autonomous pipeline pretending nobody's watching, and it's not one chatbot playing dress-up as a team. It's a structured, accountable process — AI does the drafting and the arguing, at scale; a human owns what actually goes out the door.<br><br>Even the way this page looks — plain monospace type, terminal console framing, cyan on black — is that same instinct: nothing dressed up as more than it is.</p>
+</section>
+<section class="page-block" id="services-grid" data-dp-reveal>
+<p class="block-eyebrow">Services Grid</p>
+<h2 class="tr-h2">SHIPPED, NOT SLIDES — each of these is real, live, and usable today.</h2>
+<div class="card-grid"><div class="card dp-hoverable"><p class="card-title">[ 01 ] ROUND TABLE</p><p class="card-body tr-caption">A panel of independent AI reviewers — 'Knights' — that critiques real business decisions before they ship. Built to pressure-test calls, not rubber-stamp them. status: shipped / named proof point (no public URL yet)</p></div><div class="card dp-hoverable"><p class="card-title">[ 02 ] VALID</p><p class="card-body tr-caption">A VS Code extension that intelligently routes between Gemini and Claude depending on the task. Built for developers actually shipping code — including the ones who built it. status: shipped / named proof point (no public URL yet)</p></div><div class="card dp-hoverable"><p class="card-title">[ 03 ] HOO R U</p><p class="card-body tr-caption">A multi-agent council you can talk to right now. Unlike a typical assistant, it doesn't just agree with you — it debates. status: LIVE → hooru.aint.farm</p></div><div class="card dp-hoverable"><p class="card-title">[ 04 ] DESIGNPIPE</p><p class="card-body tr-caption">An AI-powered website diagnosis and redesign tool, live in the wild and marked 'Built by AInts' — a direct line back to this colony. status: LIVE → designpipe.io</p></div></div>
+</section>
+<section class="page-block" id="cta" data-dp-reveal>
+<p class="block-eyebrow">Cta</p>
+<h2 class="tr-h2">$ open --live</h2>
+<h3 class="tr-h3">DON'T TAKE OUR WORD FOR IT — USE THE THING.</h3>
+<p class="tr-caption">→ Talk to Hoo R U: hooru.aint.farm<br>→ Run DesignPipe on your own site: designpipe.io<br><br>Round Table and Valid are shipped proof from the same colony — no public link yet, but the work is real and named, not vapor.<br><br>P.S. — DesignPipe carries the credit 'Built by AInts' right on the site. It's a sibling build, not a separate story. Worth a look on its own.</p>
+</section>
+<section class="page-block" id="footer" data-dp-reveal>
+<p class="block-eyebrow">Footer</p>
+<h2 class="tr-h2">the colony — aint.farm</h2>
+<p class="tr-caption">Products: Hoo R U (hooru.aint.farm) · DesignPipe (designpipe.io) · Round Table (named, no public URL) · Valid (named, no public URL)</p>
+</section>
+</main>
+<footer class="site-footer">AInt.farm</footer>
+<script>(function () {
+  function revealAll() {
+    document.querySelectorAll('[data-dp-reveal]').forEach(function (el) { el.classList.add('dp-revealed'); });
+  }
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced || !('IntersectionObserver' in window)) { revealAll(); return; }
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) { entry.target.classList.add('dp-revealed'); observer.unobserve(entry.target); }
+    });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('[data-dp-reveal]').forEach(function (el) { observer.observe(el); });
+  // Real bug found live: content below the fold rendered permanently
+  // invisible (opacity: 0 forever, real visible blank space where a whole
+  // section should be) for anything that renders the page without firing
+  // a real scroll — a full-page screenshot tool, a crawler, any renderer
+  // that doesn't simulate genuine scroll behavior. A bounded timeout
+  // fallback guarantees content is never PERMANENTLY hidden, while still
+  // keeping the real scroll-triggered reveal for actual interactive users
+  // within that window.
+  setTimeout(revealAll, 2500);
+})();</script>
+<script>(function () {
+  var today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+  document.querySelectorAll('.dp-visit__hours li').forEach(function (li) {
+    if (li.getAttribute('data-day') === today) li.classList.add('dp-visit__hours-row--today');
+  });
+})();</script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get In Touch — AInt.farm</title>
+<link rel="stylesheet" href="site.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Open%20Sans:wght@400;700&display=swap">
+</head>
+<body class="dp-anim-ready">
+<header class="dp-header dp-header--full-bleed-wordmark">
+  <a href="index.html" class="dp-header__logo dp-logo-wipe">
+    <span class="dp-logo-mark">A<span class="dp-logo-mark__accent">I</span></span>
+    AInt.farm
+  </a>
+  <button type="button" class="dp-header__trigger" aria-expanded="false" aria-label="Open menu" id="navTrigger">
+    <span class="dp-header__trigger-mark" aria-hidden="true"></span>
+    <span class="dp-header__trigger-label">Menu</span>
+  </button>
+  <nav class="dp-mobile-nav" aria-hidden="true" id="mobileNav">
+    <ul class="dp-mobile-nav__list"><li><a href="index.html" class="dp-mobile-nav__link">Home</a></li><li><a href="work.html" class="dp-mobile-nav__link">Work</a></li><li><a href="contact.html" class="dp-mobile-nav__link" aria-current="page">Contact</a></li></ul>
+  </nav>
+  <nav class="dp-header__desktop-nav" aria-label="Primary">
+    <ul><li><a href="index.html">Home</a></li><li><a href="work.html">Work</a></li><li><a href="contact.html" aria-current="page">Contact</a></li></ul>
+  </nav>
+</header>
+<script>
+(function () {
+  var trigger = document.getElementById('navTrigger');
+  var nav = document.getElementById('mobileNav');
+  if (!trigger || !nav) return;
+  trigger.addEventListener('click', function () {
+    var open = trigger.getAttribute('aria-expanded') === 'true';
+    trigger.setAttribute('aria-expanded', String(!open));
+    trigger.setAttribute('aria-label', !open ? 'Close menu' : 'Open menu');
+    nav.classList.toggle('dp-mobile-nav--open', !open);
+    nav.setAttribute('aria-hidden', String(open));
+  });
+})();
+</script>
+<main>
+<section class="page-header-band">
+  <h1 class="tr-h1"><span class="dp-stagger-word">Get</span> <span class="dp-stagger-word">In</span> <span class="dp-stagger-word">Touch</span></h1>
+</section>
+<section class="page-block" id="hero" data-dp-reveal>
+<p class="block-eyebrow">Hero</p>
+<p class="tr-caption">Interested in working with AInt.farm, learning more about the colony model, or exploring one of the shipped products?<br><br>- Working with AInt.farm<br>- Learning more about the colony model<br>- Exploring a shipped product: Round Table, Valid, or Hoo R U<br>- Exploring the sibling site: DesignPipe<br><br>Get in touch to start a conversation.</p>
+</section>
+<section class="page-block" id="contact" data-dp-reveal>
+<p class="block-eyebrow">Contact</p>
+<h2 class="tr-h2">Get in touch.</h2>
+</section>
+</main>
+<footer class="site-footer">AInt.farm</footer>
+<script>(function () {
+  function revealAll() {
+    document.querySelectorAll('[data-dp-reveal]').forEach(function (el) { el.classList.add('dp-revealed'); });
+  }
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced || !('IntersectionObserver' in window)) { revealAll(); return; }
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) { entry.target.classList.add('dp-revealed'); observer.unobserve(entry.target); }
+    });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('[data-dp-reveal]').forEach(function (el) { observer.observe(el); });
+  // Real bug found live: content below the fold rendered permanently
+  // invisible (opacity: 0 forever, real visible blank space where a whole
+  // section should be) for anything that renders the page without firing
+  // a real scroll — a full-page screenshot tool, a crawler, any renderer
+  // that doesn't simulate genuine scroll behavior. A bounded timeout
+  // fallback guarantees content is never PERMANENTLY hidden, while still
+  // keeping the real scroll-triggered reveal for actual interactive users
+  // within that window.
+  setTimeout(revealAll, 2500);
+})();</script>
+<script>(function () {
+  var today = new Date().toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+  document.querySelectorAll('.dp-visit__hours li').forEach(function (li) {
+    if (li.getAttribute('data-day') === today) li.classList.add('dp-visit__hours-row--today');
+  });
+})();</script>
+</body>
+</html>
